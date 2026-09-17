@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  audioSupported,
+  installAudioUnlock,
+  isAudioReady,
+  playAlertChime,
+  subscribeAudioState,
+  unlockAudio,
+} from "@/lib/chime";
 import { cn } from "@/lib/utils";
 
 export type SupportAlert = {
@@ -10,42 +18,6 @@ export type SupportAlert = {
   supportNeeds: string | null;
   checkedInAt: string | null;
 };
-
-/**
- * Kurzer Zweiklang über die Web Audio API — kein Audio-Asset nötig und damit
- * auch offline im Veranstaltungs-WLAN zuverlässig.
- */
-function playChime() {
-  try {
-    const AudioCtor =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtor) return;
-
-    const ctx = new AudioCtor();
-    const now = ctx.currentTime;
-
-    [880, 1174.66].forEach((frequency, index) => {
-      const oscillator = ctx.createOscillator();
-      const gain = ctx.createGain();
-      oscillator.type = "sine";
-      oscillator.frequency.value = frequency;
-
-      const start = now + index * 0.16;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.22, start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.42);
-
-      oscillator.connect(gain).connect(ctx.destination);
-      oscillator.start(start);
-      oscillator.stop(start + 0.45);
-    });
-
-    setTimeout(() => ctx.close().catch(() => {}), 1200);
-  } catch {
-    /* Ton ist Zusatz — die Anzeige bleibt auch ohne ihn korrekt. */
-  }
-}
 
 export type NotificationPermissionState = "unsupported" | "default" | "granted" | "denied";
 
@@ -58,6 +30,16 @@ export function useSupportNotifications(alerts: SupportAlert[]) {
   const [toasts, setToasts] = useState<SupportAlert[]>([]);
   const [permission, setPermission] = useState<NotificationPermissionState>("unsupported");
   const [soundOn, setSoundOn] = useState(true);
+
+  // Freigabezustand des Tons — der Browser kann ihn jederzeit anhalten.
+  const audioReady = useSyncExternalStore(
+    subscribeAudioState,
+    isAudioReady,
+    () => false, // auf dem Server gibt es keinen Ton
+  );
+
+  // Erste Interaktion irgendwo auf der Seite schaltet den Ton frei.
+  useEffect(() => installAudioUnlock(), []);
 
   const knownRef = useRef<Set<string> | null>(null);
 
@@ -74,11 +56,17 @@ export function useSupportNotifications(alerts: SupportAlert[]) {
   }, []);
 
   const requestPermission = useCallback(async () => {
+    // Läuft aus einem Klick heraus — der richtige Moment, den Ton mitzunehmen.
+    await unlockAudio();
     if (typeof Notification === "undefined") return;
     const result = await Notification.requestPermission();
     setPermission(result as NotificationPermissionState);
-    // Erster Ton direkt nach der Nutzerinteraktion — danach erlauben Browser Audio.
-    if (result === "granted") playChime();
+  }, []);
+
+  /** Vorab ausprobieren, ob im Raum wirklich etwas zu hören ist. */
+  const testSound = useCallback(async () => {
+    await unlockAudio();
+    await playAlertChime();
   }, []);
 
   useEffect(() => {
@@ -93,7 +81,7 @@ export function useSupportNotifications(alerts: SupportAlert[]) {
     knownRef.current = new Set(incomingIds);
     if (fresh.length === 0) return;
 
-    if (soundOnRef.current) playChime();
+    if (soundOnRef.current) void playAlertChime();
 
     setToasts((prev) => [...fresh, ...prev].slice(0, 4));
 
@@ -116,7 +104,17 @@ export function useSupportNotifications(alerts: SupportAlert[]) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  return { toasts, dismiss, permission, requestPermission, soundOn, setSoundOn };
+  return {
+    toasts,
+    dismiss,
+    permission,
+    requestPermission,
+    soundOn,
+    setSoundOn,
+    audioReady,
+    audioSupported: audioSupported(),
+    testSound,
+  };
 }
 
 export function AlertToasts({
@@ -169,28 +167,50 @@ export function NotificationSettings({
   onRequest,
   soundOn,
   onToggleSound,
+  audioReady,
+  onTestSound,
 }: {
   permission: NotificationPermissionState;
   onRequest: () => void;
   soundOn: boolean;
   onToggleSound: (value: boolean) => void;
+  audioReady: boolean;
+  onTestSound: () => void;
 }) {
-  const chip =
-    "border px-2 py-1 text-[0.6875rem] tracking-[0.06em] uppercase transition-colors";
+  const chip = "border px-2 py-1 text-[0.6875rem] tracking-[0.06em] uppercase transition-colors";
+  const quiet =
+    "border-[var(--line-strong)] text-[var(--text-faint)] hover:border-[var(--text)] hover:text-[var(--text)]";
+  const solid = "border-[var(--text)] bg-[var(--text)] text-[var(--page)]";
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <button
+        type="button"
+        role="switch"
+        aria-checked={soundOn}
         onClick={() => onToggleSound(!soundOn)}
-        className={cn(
-          chip,
-          soundOn
-            ? "border-[var(--text)] bg-[var(--text)] text-[var(--page)]"
-            : "border-[var(--line-strong)] text-[var(--text-faint)] hover:border-[var(--text)] hover:text-[var(--text)]",
-        )}
+        className={cn(chip, soundOn ? solid : quiet)}
       >
         Ton {soundOn ? "an" : "aus"}
       </button>
+
+      {/*
+        Browser lassen Ton erst nach einer Interaktion zu. Solange das nicht
+        passiert ist, bliebe die Meldung stumm — deshalb sichtbar machen statt
+        stillschweigend hinnehmen.
+      */}
+      {soundOn ? (
+        <button
+          type="button"
+          onClick={onTestSound}
+          className={cn(
+            chip,
+            audioReady ? quiet : "border-[var(--color-signal)] text-[var(--color-signal)]",
+          )}
+        >
+          {audioReady ? "Ton testen" : "Ton freigeben"}
+        </button>
+      ) : null}
 
       {permission === "granted" ? (
         <span className={cn(chip, "border-[var(--line-strong)] text-[var(--text-faint)]")}>
@@ -201,13 +221,7 @@ export function NotificationSettings({
           Systemhinweise blockiert
         </span>
       ) : (
-        <button
-          onClick={onRequest}
-          className={cn(
-            chip,
-            "border-[var(--line-strong)] text-[var(--text-soft)] hover:border-[var(--text)] hover:text-[var(--text)]",
-          )}
-        >
+        <button type="button" onClick={onRequest} className={cn(chip, quiet)}>
           Systemhinweise erlauben
         </button>
       )}

@@ -102,6 +102,8 @@ export function LiveBoard({ eventId, initial }: { eventId: string; initial: Live
             onRequest={notifications.requestPermission}
             soundOn={notifications.soundOn}
             onToggleSound={notifications.setSoundOn}
+            audioReady={notifications.audioReady}
+            onTestSound={notifications.testSound}
           />
         }
       />
