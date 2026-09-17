@@ -1,17 +1,65 @@
+# ---------------------------------------------------------------------------
+# Abhaengigkeiten und Build-Artefakte
+# ---------------------------------------------------------------------------
 node_modules/
 .next/
 out/
 build/
+dist/
 *.tsbuildinfo
 next-env.d.ts
-.DS_Store
+.swc/
+.turbo/
+.vercel/
 
+# ---------------------------------------------------------------------------
 # Zugangsdaten - niemals ins Repository.
+# ---------------------------------------------------------------------------
 .env
 .env.*
 !.env.example
 
-# Datenbank-Dumps enthalten Gaestedaten.
+# Lokales HTTPS (mkcert, next dev --experimental-https).
+certificates/
+*.pem
+*.key
+*.crt
+*.p12
+
+# ---------------------------------------------------------------------------
+# Personenbezogene Daten - Gaestelisten, Exporte, Backups.
+# Grundsaetzlich ausgeschlossen: ein echter doo-Export darf nie im Repo landen.
+# Synthetische Beispieldateien werden einzeln wieder freigegeben.
+# ---------------------------------------------------------------------------
+*.csv
+*.xlsx
+*.xls
+!examples/doo-export-beispiel.csv
+
 *.dump
 *.sql.gz
 /backups/
+
+# ---------------------------------------------------------------------------
+# Editor und Betriebssystem
+# ---------------------------------------------------------------------------
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---------------------------------------------------------------------------
+# Logs und Testausgaben
+# ---------------------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+.nyc_output/

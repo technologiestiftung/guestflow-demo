@@ -1,0 +1,98 @@
+# GuestFlow - Betrieb auf dem Server.
+#
+# Das Anwendungs-Image kommt fertig gebaut aus der Registry, die Datenbank
+# laeuft als eigener Dienst mit eigenem Volume. Dadurch aendert ein Deployment
+# nur die Anwendung - die Gaestedaten bleiben unberuehrt.
+#
+# TLS und Routing uebernimmt eine bereits vorhandene Traefik-Installation.
+# Es wird deshalb kein Port nach aussen veroeffentlicht: Traefik erreicht die
+# Anwendung ueber das gemeinsame Docker-Netzwerk.
+#
+# Start:   docker compose -f docker-compose.prod.yml up -d
+# Update:  docker compose -f docker-compose.prod.yml pull && \
+#          docker compose -f docker-compose.prod.yml up -d
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB fehlt - bitte .env anlegen}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER fehlt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    # Bewusst ohne ports: die Datenbank ist ausschliesslich im internen Netz
+    # erreichbar. Fuer ein Backup: docker compose exec db pg_dump ...
+    networks:
+      - guestflow
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    image: ${GUESTFLOW_IMAGE:?GUESTFLOW_IMAGE fehlt - z.B. ghcr.io/<owner>/<repo>:latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD fehlt - bitte .env anlegen}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET fehlt - bitte .env anlegen}
+      # Traefik terminiert TLS, die oeffentliche Adresse ist daher immer https.
+      # Sie landet in den QR-Codes und im digitalen Ausweis der Gaeste.
+      APP_URL: https://${APP_DOMAIN:?APP_DOMAIN fehlt - z.B. checkin.example.org}
+      # Traefik setzt X-Forwarded-For selbst. Die Mengenbegrenzung darf den
+      # Header deshalb auswerten und pro Client-Adresse greifen.
+      TRUST_PROXY: "true"
+      NODE_ENV: production
+    networks:
+      - guestflow
+      - traefik
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    labels:
+      traefik.enable: "true"
+      # Sagt Traefik, ueber welches Netz der Dienst zu erreichen ist - noetig,
+      # weil der Container in zwei Netzen haengt.
+      traefik.docker.network: ${TRAEFIK_NETWORK:-traefik}
+      traefik.http.routers.guestflow.rule: "Host(`${APP_DOMAIN}`)"
+      traefik.http.routers.guestflow.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
+      traefik.http.routers.guestflow.tls: "true"
+      traefik.http.routers.guestflow.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      # Der Container lauscht intern immer auf 3000, unabhaengig von APP_PORT.
+      traefik.http.services.guestflow.loadbalancer.server.port: "3000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  db-data:
+
+networks:
+  # Internes Netz zwischen Anwendung und Datenbank.
+  guestflow:
+    driver: bridge
+  # Das bereits vorhandene Netz der Traefik-Installation. Name pruefen mit:
+  #   docker network ls
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}

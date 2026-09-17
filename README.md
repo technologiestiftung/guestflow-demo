@@ -78,9 +78,17 @@ erkannt — Vorname, Nachname, E-Mail, Organisation, Ticketcode, Tickettyp, Quel
 Unterstützungsbedarf, Notiz. Erkannt werden gängige Schreibweisen und Umlaute, Semikolon
 und Komma als Trennzeichen sowie das BOM aus Excel-Exporten.
 
+Enthält der Export mehrere in Frage kommende Spalten, entscheidet die Genauigkeit der
+Überschrift, nicht ihre Position: `Ticketcode` und `Ticket-Nr.` gehen `Bestellnummer` vor,
+weil nur der Ticketcode im QR-Code des Gastes steckt. Gibt es ausschließlich eine
+Bestellnummer, wird diese als Schlüssel verwendet.
+
 Ein erneuter Import aktualisiert die Stammdaten, **ohne bereits erfasste Anwesenheiten zu
 verlieren** (Upsert über Veranstaltung + Ticketcode). Zeilen ohne Ticketcode bleiben über
 die Namenssuche auffindbar.
+
+Eine Beispieldatei zum Ausprobieren liegt unter `examples/doo-export-beispiel.csv`
+(20 erfundene Gäste, verschiedene Organisationen, teils mit Unterstützungsbedarf).
 
 ### Namensschilder
 
@@ -250,6 +258,84 @@ docker compose exec -T db pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > backups/g
 
 **Gesundheitsprüfung.** `/api/health` prüft die Datenbankverbindung und liefert bei
 Störung HTTP 503. Der Container nutzt denselben Endpunkt.
+
+---
+
+## Deployment
+
+Das Image wird in der CI gebaut und auf dem Server nur noch geladen. Es enthält
+**ausschließlich die Anwendung** — die Datenbank läuft als eigener Dienst mit eigenem
+Volume. Ein Deployment tauscht damit nur den Anwendungscontainer aus; die Gästedaten
+bleiben unberührt.
+
+### Image bauen (GitHub Actions)
+
+`.github/workflows/build.yml` baut bei jedem Push auf `main` und veröffentlicht nach
+`ghcr.io/<owner>/<repo>`. Zusätzliche Zugangsdaten sind nicht nötig — der automatisch
+bereitgestellte `GITHUB_TOKEN` genügt. Pull Requests werden nur gebaut, nicht
+veröffentlicht.
+
+| Auslöser | Tag |
+| --- | --- |
+| Push auf `main` | `latest` und `sha-<commit>` |
+| Git-Tag `v1.2.0` | `1.2.0`, `1.2` und `sha-<commit>` |
+
+Vor dem Bauen läuft `npm run typecheck`; schlägt die Prüfung fehl, entsteht kein Image.
+
+Einmalig in den Repository-Einstellungen prüfen, dass unter *Actions → General →
+Workflow permissions* das Schreiben von Packages erlaubt ist. Das Package ist nach dem
+ersten Lauf zunächst privat — für `docker compose pull` auf dem Server entweder auf
+öffentlich stellen oder auf dem Server mit einem Token anmelden:
+
+```bash
+echo "$TOKEN" | docker login ghcr.io -u <benutzer> --password-stdin
+```
+
+### Auf dem Server einrichten
+
+Traefik muss bereits laufen. Benötigt werden nur `docker-compose.prod.yml` und eine
+`.env`.
+
+```bash
+./scripts/init-env.sh          # erzeugt .env mit zufälligen Zugangsdaten
+```
+
+Danach in `.env` die vier Werte für das Deployment eintragen:
+
+```bash
+GUESTFLOW_IMAGE=ghcr.io/<owner>/<repo>:latest
+APP_DOMAIN=checkin.example.org
+TRAEFIK_NETWORK=traefik        # Name prüfen mit: docker network ls
+TRAEFIK_ENTRYPOINT=websecure
+TRAEFIK_CERTRESOLVER=letsencrypt
+```
+
+`APP_URL` wird daraus als `https://$APP_DOMAIN` gebildet und muss nicht separat gesetzt
+werden. Starten:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Die Migrationen laufen beim Start des Containers automatisch.
+
+### Aktualisieren
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### Was Traefik sieht
+
+Der Anwendungscontainer hängt in zwei Netzen: `guestflow` für die Datenbank und dem
+externen Traefik-Netz für den Zugriff von außen. Nach außen ist **kein Port
+veröffentlicht** — auch die Datenbank nicht. Die Labels setzen Host-Regel, Entrypoint
+und Zertifikats-Resolver; `loadbalancer.server.port` steht fest auf `3000`, dem Port
+innerhalb des Containers.
+
+Läuft auf demselben Traefik bereits ein anderer Dienst mit dem Router-Namen
+`guestflow`, sind die Label-Namen in `docker-compose.prod.yml` anzupassen.
 
 ---
 
