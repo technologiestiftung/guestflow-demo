@@ -1,13 +1,13 @@
 import { getEventBySlug, performCheckin, displayName } from "@/lib/checkin";
 import { fail, json, maskEmail } from "@/lib/api";
-import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { clientKey, LIMITS, rateLimit } from "@/lib/rate-limit";
 import { clampString } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, ctx: { params: Promise<{ slug: string }> }) {
   // Ein Tablet scannt im Betrieb selten öfter als 1×/Sekunde.
-  if (!rateLimit(clientKey(request, "checkin"), 60, 60_000)) {
+  if (!rateLimit(clientKey(request, "checkin"), LIMITS.kioskCheckin)) {
     return fail("Zu viele Anfragen.", 429);
   }
 

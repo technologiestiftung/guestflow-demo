@@ -1,20 +1,24 @@
 import { cookies } from "next/headers";
 import { checkPassword, createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { fail, json } from "@/lib/api";
-import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { clientKey, LIMITS, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  // Fünf Versuche pro Minute und IP — bremst Rateversuche ohne echte Nutzung zu stören.
-  if (!rateLimit(clientKey(request, "login"), 5, 60_000)) {
-    return fail("Zu viele Versuche. Bitte kurz warten.", 429);
-  }
-
   const body = await request.json().catch(() => null);
   const password = typeof body?.password === "string" ? body.password : "";
   if (!password) return fail("Passwort fehlt.");
 
-  if (!(await checkPassword(password))) {
-    return fail("Passwort stimmt nicht.", 401);
+  // Bewusst zuerst prüfen, dann erst Budget verbrauchen: Ein richtiges Passwort
+  // kommt dadurch auch dann durch, wenn jemand die Begrenzung mit falschen
+  // Versuchen vollgelaufen hat. Sonst könnte sich das Team am Veranstaltungstag
+  // von außen aussperren lassen.
+  const correct = await checkPassword(password);
+
+  if (!correct) {
+    const within = rateLimit(clientKey(request, "login"), LIMITS.loginFailures);
+    return within
+      ? fail("Passwort stimmt nicht.", 401)
+      : fail("Zu viele Fehlversuche. Bitte später erneut versuchen.", 429);
   }
 
   const store = await cookies();

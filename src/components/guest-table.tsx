@@ -72,10 +72,12 @@ export function GuestTable({ eventId, guests }: { eventId: string; guests: Guest
     <div>
       {/* Filter als Registerreihe auf einer Linie — kein Kasten, keine Füllung. */}
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--line)]">
-        <div className="-mb-px flex">
+        <div role="tablist" aria-label="Gästeliste filtern" className="-mb-px flex">
           {FILTERS.map((entry) => (
             <button
               key={entry.key}
+              role="tab"
+              aria-selected={filter === entry.key}
               onClick={() => setFilter(entry.key)}
               className={cn(
                 "border-b-2 px-3.5 pb-2.5 text-sm transition-colors",
@@ -86,6 +88,7 @@ export function GuestTable({ eventId, guests }: { eventId: string; guests: Guest
             >
               {entry.label}
               <span className="num ml-2 text-xs opacity-60">{counts[entry.key]}</span>
+              <span className="sr-only"> Einträge</span>
             </button>
           ))}
         </div>

@@ -60,8 +60,13 @@ export function useSupportNotifications(alerts: SupportAlert[]) {
   const [soundOn, setSoundOn] = useState(true);
 
   const knownRef = useRef<Set<string> | null>(null);
+
+  // Der Ton-Schalter steckt in einer Ref, damit ein Umschalten nicht als neue
+  // Meldung durchgeht. Geschrieben wird er im Effekt, nicht beim Rendern.
   const soundOnRef = useRef(soundOn);
-  soundOnRef.current = soundOn;
+  useEffect(() => {
+    soundOnRef.current = soundOn;
+  }, [soundOn]);
 
   useEffect(() => {
     if (typeof Notification === "undefined") return;

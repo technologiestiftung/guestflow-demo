@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { guests } from "@/db/schema";
 import { getEventBySlug, displayName } from "@/lib/checkin";
 import { fail, json, maskEmail } from "@/lib/api";
-import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { clientKey, LIMITS, rateLimit } from "@/lib/rate-limit";
 import { hasEventAccess } from "@/lib/self-service";
 import { clampString } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ const MAX_RESULTS = 5;
 
 export async function POST(request: Request, ctx: { params: Promise<{ slug: string }> }) {
   // Enger als am Kiosk: hier tippt jeder Gast auf seinem eigenen Gerät.
-  if (!rateLimit(clientKey(request, "self-find"), 15, 60_000)) {
+  if (!rateLimit(clientKey(request, "self-find"), LIMITS.selfFind)) {
     return fail("Zu viele Versuche. Bitte einen Moment warten.", 429);
   }
 

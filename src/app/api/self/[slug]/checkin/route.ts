@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { guests } from "@/db/schema";
 import { displayName, getEventBySlug, performCheckin } from "@/lib/checkin";
 import { fail, json } from "@/lib/api";
-import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { clientKey, LIMITS, rateLimit } from "@/lib/rate-limit";
 import { hasEventAccess, readPass, writePass } from "@/lib/self-service";
 import { createPassToken } from "@/lib/tokens";
 import { clampString } from "@/lib/utils";
@@ -11,7 +11,7 @@ import { clampString } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, ctx: { params: Promise<{ slug: string }> }) {
-  if (!rateLimit(clientKey(request, "self-checkin"), 20, 60_000)) {
+  if (!rateLimit(clientKey(request, "self-checkin"), LIMITS.selfCheckin)) {
     return fail("Zu viele Anfragen.", 429);
   }
 

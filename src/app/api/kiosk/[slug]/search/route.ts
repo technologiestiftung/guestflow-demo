@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { guests } from "@/db/schema";
 import { getEventBySlug, displayName } from "@/lib/checkin";
 import { fail, json, maskEmail } from "@/lib/api";
-import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { clientKey, LIMITS, rateLimit } from "@/lib/rate-limit";
 import { clampString } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ const MAX_RESULTS = 6;
 
 export async function GET(request: Request, ctx: { params: Promise<{ slug: string }> }) {
   // Deutlich enger als der Check-in: die Suche ist der heiklere Endpunkt.
-  if (!rateLimit(clientKey(request, "search"), 20, 60_000)) {
+  if (!rateLimit(clientKey(request, "search"), LIMITS.kioskSearch)) {
     return fail("Zu viele Suchanfragen.", 429);
   }
 

@@ -84,8 +84,14 @@ weil nur der Ticketcode im QR-Code des Gastes steckt. Gibt es ausschließlich ei
 Bestellnummer, wird diese als Schlüssel verwendet.
 
 Ein erneuter Import aktualisiert die Stammdaten, **ohne bereits erfasste Anwesenheiten zu
-verlieren** (Upsert über Veranstaltung + Ticketcode). Zeilen ohne Ticketcode bleiben über
-die Namenssuche auffindbar.
+verlieren** (Upsert über Veranstaltung + Ticketcode).
+
+Zeilen ohne Ticketcode bekommen einen Ersatzschlüssel aus ihrem Inhalt — der
+E-Mail-Adresse, ersatzweise einem Hash aus Name und Organisation. Dadurch bleibt die
+Zuordnung auch dann erhalten, wenn sich zwischen zwei Exporten die Reihenfolge der Zeilen
+ändert, etwa durch eine Nachmeldung. Steht dieselbe Person zweimal in der Datei, wird die
+zweite Zeile übersprungen und im Ergebnis mit der Zeilennummer des ersten Vorkommens
+ausgewiesen.
 
 Eine Beispieldatei zum Ausprobieren liegt unter `examples/doo-export-beispiel.csv`
 (20 erfundene Gäste, verschiedene Organisationen, teils mit Unterstützungsbedarf).
@@ -155,8 +161,19 @@ werden kann — so hängen beide Wege an einer Stelle.
 
 **Team-Bereich.** `/admin` ist durch ein Passwort geschützt (`ADMIN_PASSWORD`). Die Sitzung
 läuft über ein signiertes, `httpOnly`-Cookie mit zwölf Stunden Laufzeit. Passwortvergleich
-und Signaturprüfung sind zeitkonstant; Anmeldeversuche sind auf fünf pro Minute und
-IP-Adresse begrenzt.
+und Signaturprüfung sind zeitkonstant.
+
+Begrenzt werden **nur Fehlversuche** (10 pro Minute, 60 pro Stunde). Das Passwort wird vor
+dem Verbrauch des Budgets geprüft — ein richtiges Passwort kommt deshalb immer durch, auch
+wenn jemand die Bremse mit falschen Versuchen vollaufen lässt. Sonst könnte sich das Team
+am Veranstaltungstag von außen aussperren lassen.
+
+**`TRUST_PROXY`.** `X-Forwarded-For` kann jeder Client selbst setzen. Ohne vorgeschalteten
+Proxy ist der Header daher wertlos, und die Begrenzung wird nur ausgewertet, wenn
+`TRUST_PROXY=true` gesetzt ist — dann greift sie pro Client-Adresse, sonst pauschal pro
+Bereich. Den Wert **nur** setzen, wenn tatsächlich ein Proxy davorsteht, der den Header
+selbst schreibt und mitgeschickte Werte verwirft. `docker-compose.prod.yml` setzt ihn
+hinter Traefik selbst.
 
 **Gästeseite.** Die mobile Anmeldeseite ist nur mit dem Zugangsschlüssel der Veranstaltung
 erreichbar. Dieser steckt im QR-Code bzw. auf der NFC-Plakette, wird beim ersten Aufruf ins
@@ -167,7 +184,10 @@ beschriebenen Plaketten auf einen Schlag ungültig machen.
 **Suche.** Um zu verhindern, dass die Gästeliste über die Suchfunktion abgeschöpft wird:
 mindestens drei Zeichen, höchstens fünf bis sechs Treffer (darüber wird zur präziseren
 Eingabe aufgefordert statt Ergebnisse auszuspielen), E-Mail-Adressen werden verkürzt
-angezeigt, und alle Endpunkte sind mengenbegrenzt.
+angezeigt, und alle Endpunkte sind mengenbegrenzt. Die Grenzwerte der Gästeseite sind
+bewusst großzügig: Beim Einlass tippen viele Menschen gleichzeitig, alle hinter derselben
+öffentlichen Adresse des Veranstaltungs-WLANs. Der eigentliche Schutz ist dort der
+Zugangsschlüssel, nicht die Mengenbegrenzung.
 
 **Protokoll.** Von gescannten Codes wird nur ein gekürzter Hinweis gespeichert
 (`AB…89 (12)`) — genug zur Fehlersuche, zu wenig zur Wiederverwendung.
@@ -245,6 +265,11 @@ npm run dev
 auf jeder anderen Adresse nicht. Für den echten Betrieb gehört ein Reverse Proxy mit
 TLS davor (Caddy, Traefik, nginx). `APP_URL` muss dann auf die öffentliche Adresse zeigen,
 damit QR-Codes und NFC-Tags die richtige Adresse enthalten.
+
+**Kamera am Kiosk.** Der Kiosk fordert die Kamera auf der Bildschirmseite an — der Gast
+steht davor und hält sein Telefon dorthin. Hat das Gerät mehrere Kameras, erscheint unter
+dem Sucher eine Auswahl; die Wahl bleibt auf dem Gerät gespeichert. Vor der Veranstaltung
+einmal prüfen, ob das Bild die Gäste zeigt und nicht die Wand dahinter.
 
 **Betrieb in mehreren Instanzen.** Die Mengenbegrenzung arbeitet prozesslokal. Wird hinter
 einem Load Balancer skaliert, gehört sie hinter einen gemeinsamen Speicher (Redis) oder

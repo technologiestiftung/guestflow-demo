@@ -48,6 +48,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD fehlt - bitte .env anlegen}
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET fehlt - bitte .env anlegen}
       APP_URL: ${APP_URL:-http://localhost:3000}
+      # Kein Proxy davor: X-Forwarded-For waere frei waehlbar und damit wertlos.
+      TRUST_PROXY: ${TRUST_PROXY:-false}
       NODE_ENV: production
     ports:
       - "${APP_PORT:-3000}:3000"

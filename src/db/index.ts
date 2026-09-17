@@ -44,8 +44,9 @@ function connect(): { sql: postgres.Sql; db: Database } {
 
 export const db = new Proxy({} as Database, {
   get(_target, property) {
-    const value = connect().db[property as keyof Database];
-    return typeof value === "function" ? value.bind(connect().db) : value;
+    const database = connect().db;
+    const value = database[property as keyof Database];
+    return typeof value === "function" ? value.bind(database) : value;
   },
 }) as Database;
 

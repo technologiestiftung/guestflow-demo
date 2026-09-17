@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GuestFlowLogo } from "@/components/brand";
 import { Button, Dot, Input, Spinner } from "@/components/ui";
-import { useKeyboardWedge, useScanner } from "@/components/use-scanner";
+import { useKeyboardWedge, useScanner, type CameraOption } from "@/components/use-scanner";
 import { cn } from "@/lib/utils";
 
 type CheckinGuest = {
@@ -123,7 +123,10 @@ export function KioskClient({
   );
 
   const scannerActive = mode === "scan" && !outcome && !busy;
-  const { videoRef, status, message } = useScanner(handleCode, scannerActive);
+  const { videoRef, status, message, cameras, deviceId, selectCamera } = useScanner(
+    handleCode,
+    scannerActive,
+  );
   useKeyboardWedge(handleCode, !outcome && !busy);
 
   useEffect(() => {
@@ -191,6 +194,9 @@ export function KioskClient({
             busy={busy}
             manualSearch={manualSearch}
             onSearch={() => setMode("search")}
+            cameras={cameras}
+            deviceId={deviceId}
+            onSelectCamera={selectCamera}
           />
         ) : (
           <SearchPanel
@@ -234,6 +240,9 @@ function ScanPanel({
   busy,
   manualSearch,
   onSearch,
+  cameras,
+  deviceId,
+  onSelectCamera,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   live: boolean;
@@ -241,6 +250,9 @@ function ScanPanel({
   busy: boolean;
   manualSearch: boolean;
   onSearch: () => void;
+  cameras: CameraOption[];
+  deviceId: string | null;
+  onSelectCamera: (id: string) => void;
 }) {
   return (
     <div className="grid w-full max-w-5xl items-center gap-12 lg:grid-cols-2 lg:gap-20">
@@ -288,6 +300,7 @@ function ScanPanel({
 
       <div className="order-1 mx-auto w-full max-w-sm lg:order-2 lg:max-w-none">
         <ScannerViewport videoRef={videoRef} live={live} busy={busy} />
+        <CameraPicker cameras={cameras} deviceId={deviceId} onSelect={onSelectCamera} />
       </div>
     </div>
   );
@@ -335,6 +348,48 @@ function ScannerViewport({
           ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Tablets haben mehrere Kameras, und nur wer davor steht, weiß welche auf die
+ * Gäste zeigt. Deshalb die Auswahl direkt am Sucher — unaufdringlich, aber
+ * erreichbar, ohne den Kiosk zu verlassen. Die Wahl bleibt auf dem Gerät.
+ */
+function CameraPicker({
+  cameras,
+  deviceId,
+  onSelect,
+}: {
+  cameras: CameraOption[];
+  deviceId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  if (cameras.length < 2) return null;
+
+  return (
+    <div className="animate-fade mt-3 flex flex-wrap items-center gap-2">
+      <span className="label">Kamera</span>
+      {cameras.map((camera, index) => {
+        const active = deviceId === camera.deviceId;
+        return (
+          <button
+            key={camera.deviceId || index}
+            onClick={() => onSelect(camera.deviceId)}
+            aria-pressed={active}
+            title={camera.label}
+            className={cn(
+              "max-w-[10rem] truncate border px-2 py-1 text-xs transition-colors",
+              active
+                ? "border-[var(--text)] bg-[var(--text)] text-[var(--page)]"
+                : "border-[var(--line-strong)] text-[var(--text-faint)] hover:border-[var(--text)] hover:text-[var(--text)]",
+            )}
+          >
+            {camera.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

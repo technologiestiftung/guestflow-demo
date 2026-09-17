@@ -65,17 +65,24 @@ export function EventSettings({ eventId, flags }: { eventId: string; flags: Flag
         {OPTIONS.map((option) => (
           <li key={option.key}>
             <button
+              type="button"
+              role="switch"
+              aria-checked={state[option.key]}
+              aria-describedby={`${option.key}-hint`}
               onClick={() => toggle(option.key)}
               disabled={busy === option.key}
               className="flex w-full items-start justify-between gap-4 py-3.5 text-left transition-colors hover:bg-[var(--page-sunk)] disabled:opacity-50"
             >
               <span className="min-w-0">
                 <span className="block text-sm font-medium">{option.label}</span>
-                <span className="block text-xs text-[var(--text-faint)]">{option.hint}</span>
+                <span id={`${option.key}-hint`} className="block text-xs text-[var(--text-faint)]">
+                  {option.hint}
+                </span>
               </span>
 
               {/* Schalter als zwei Quadrate — passt zur kantigen Sprache. */}
               <span
+                aria-hidden
                 className={cn(
                   "mt-0.5 flex h-5 w-9 shrink-0 items-center border p-[2px] transition-colors duration-150",
                   state[option.key]

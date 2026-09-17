@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 /**
  * Kleiner RFC-4180-Parser. Doo-Exporte kommen je nach Locale mit Komma oder
  * Semikolon, mit BOM und mit Feldern in Anführungszeichen — das deckt das hier ab.
@@ -13,41 +15,69 @@ export function detectDelimiter(sample: string): string {
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
 }
 
-export function parseCsv(input: string, delimiter?: string): string[][] {
+/** Ein Datensatz samt der Zeile, in der er in der Datei beginnt. */
+export type CsvRecord = { cells: string[]; line: number };
+
+/**
+ * Datensätze mit ihrer Position in der Datei.
+ *
+ * Die Zeilennummer wird mitgeführt, damit ein Hinweis auf eine fehlerhafte
+ * Zeile auf die Stelle zeigt, die in Excel auch wirklich dort steht. Leerzeilen
+ * und Felder mit Zeilenumbruch innerhalb von Anführungszeichen würden die
+ * Zählung sonst gegenüber der Datei verschieben.
+ */
+export function parseCsvRecords(input: string, delimiter?: string): CsvRecord[] {
   const text = input.replace(/^﻿/, "");
   const delim = delimiter ?? detectDelimiter(text);
-  const rows: string[][] = [];
+
+  const records: CsvRecord[] = [];
   let row: string[] = [];
   let field = "";
   let inQuotes = false;
+  let line = 1;
+  let recordStart = 1;
+
+  const closeRecord = () => {
+    row.push(field);
+    // Leerzeilen übergehen, aber die Zählung nicht verlieren.
+    if (row.some((cell) => cell.trim() !== "")) records.push({ cells: row, line: recordStart });
+    row = [];
+    field = "";
+  };
 
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
+
     if (inQuotes) {
       if (char === '"') {
         if (text[i + 1] === '"') {
           field += '"';
           i++;
         } else inQuotes = false;
-      } else field += char;
+      } else {
+        if (char === "\n") line++;
+        field += char;
+      }
       continue;
     }
+
     if (char === '"') inQuotes = true;
     else if (char === delim) {
       row.push(field);
       field = "";
     } else if (char === "\n") {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
+      closeRecord();
+      line++;
+      recordStart = line;
     } else if (char !== "\r") field += char;
   }
-  if (field.length > 0 || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-  return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
+
+  if (field.length > 0 || row.length > 0) closeRecord();
+  return records;
+}
+
+export function parseCsv(input: string, delimiter?: string): string[][] {
+  return parseCsvRecords(input, delimiter).map((record) => record.cells);
 }
 
 /** Spaltenüberschriften auf einen Vergleichsschlüssel normalisieren. */
@@ -77,7 +107,7 @@ const FIELD_ALIASES: Record<string, string[]> = {
     "unterstuetzungsbedarf", "unterstuetzung", "barrierefreiheit", "accessibility",
     "support", "supportneeds", "assistenz", "verdolmetschung", "besonderebeduerfnisse",
   ],
-  ticketType: ["tickettyp", "tickettype", "kategorie", "ticketkategorie", "ticketart"],
+  ticketType: ["tickettyp", "tickettype", "ticketkategorie", "ticketart", "kategorie"],
   notes: ["notiz", "notizen", "notes", "bemerkung", "kommentar", "anmerkung"],
 };
 
@@ -88,13 +118,31 @@ export function mapColumns(headerRow: string[]): ColumnMapping {
   const mapping: ColumnMapping = {};
   for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
     // Exakter Treffer geht vor, sonst "enthält" — "Name" darf nicht "Vorname" kapern.
-    let index = normalized.findIndex((h) => aliases.includes(h));
+    // Innerhalb einer Runde entscheidet die Reihenfolge der Aliasse, nicht die
+    // der Spalten: Doo exportiert Bestellnummer und Ticket-Nr. nebeneinander,
+    // und nur die Ticket-Nr. steckt im QR-Code. Stünde die Bestellnummer weiter
+    // links, würde sie als Ticketcode gespeichert — die Bestellnummer wiederholt
+    // sich bei Sammelbestellungen, es blieben also Gäste als Dubletten liegen.
+    let index = findByAlias(normalized, aliases, (h, alias) => h === alias);
     if (index === -1) {
-      index = normalized.findIndex((h) => h.length > 3 && aliases.some((a) => h.includes(a)));
+      index = findByAlias(normalized, aliases, (h, alias) => h.length > 3 && h.includes(alias));
     }
     if (index !== -1) mapping[field as keyof ColumnMapping] = index;
   }
   return mapping;
+}
+
+/** Erster Spaltentreffer für den am höchsten priorisierten Alias. */
+function findByAlias(
+  headers: string[],
+  aliases: string[],
+  matches: (header: string, alias: string) => boolean,
+): number {
+  for (const alias of aliases) {
+    const index = headers.findIndex((h) => matches(h, alias));
+    if (index !== -1) return index;
+  }
+  return -1;
 }
 
 export type ImportRow = {
@@ -121,19 +169,47 @@ const clean = (value: string | undefined): string | null => {
   return trimmed === "" || trimmed === "-" ? null : trimmed;
 };
 
+/**
+ * Ersatzschlüssel für Zeilen ohne Ticketcode.
+ *
+ * Er muss aus dem Inhalt der Zeile folgen, nicht aus ihrer Position: Der Import
+ * gleicht über (Veranstaltung, Ticketcode) ab, damit ein zweiter Import die
+ * Stammdaten aktualisiert statt Dubletten anzulegen. Eine Zeilennummer ändert
+ * sich aber, sobald jemand eine Nachmeldung oben in die Liste einfügt — dann
+ * wäre jeder Gast ohne Ticketcode doppelt in der Anwesenheitsliste, die Kopie
+ * mit Status "nicht da".
+ *
+ * Die E-Mail-Adresse ist der beste Anker; fehlt sie, dient ein Hash aus Name
+ * und Organisation. Beide bleiben über Exporte hinweg stabil.
+ */
+function fallbackTicketCode(row: {
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  organization: string | null;
+}): string {
+  if (row.email) return `auto:mail:${row.email}`;
+
+  const basis = [row.lastName, row.firstName, row.organization]
+    .map((part) => (part ?? "").trim().toLowerCase())
+    .join("|");
+  const digest = createHash("sha256").update(basis).digest("hex").slice(0, 16);
+  return `auto:name:${digest}`;
+}
+
 export function parseGuestList(csvText: string): ParsedImport {
-  const rows = parseCsv(csvText);
-  if (rows.length === 0) {
+  const records = parseCsvRecords(csvText);
+  if (records.length === 0) {
     return { rows: [], headers: [], mapping: {}, skipped: [] };
   }
-  const [headerRow, ...dataRows] = rows;
-  const mapping = mapColumns(headerRow);
+
+  const [headerRecord, ...dataRecords] = records;
+  const mapping = mapColumns(headerRecord.cells);
   const skipped: { line: number; reason: string }[] = [];
   const parsed: ImportRow[] = [];
-  const seen = new Set<string>();
+  const seen = new Map<string, number>();
 
-  dataRows.forEach((cells, i) => {
-    const line = i + 2; // +1 Header, +1 für 1-basierte Zeilen
+  for (const { cells, line } of dataRecords) {
     const at = (field: keyof ColumnMapping) => {
       const index = mapping[field];
       return index === undefined ? null : clean(cells[index]);
@@ -143,32 +219,41 @@ export function parseGuestList(csvText: string): ParsedImport {
     const firstName = at("firstName");
     if (!lastName && !firstName) {
       skipped.push({ line, reason: "Kein Name in der Zeile" });
-      return;
+      continue;
     }
 
-    // Ohne Ticketcode bleibt die Person per Namenssuche auffindbar.
-    const ticketCode = at("ticketCode") ?? `manuell-${line}-${(lastName ?? firstName)!.slice(0, 12)}`;
+    const email = at("email")?.toLowerCase() ?? null;
+    const organization = at("organization");
+
+    // Ohne Ticketcode bleibt die Person über Name bzw. E-Mail auffindbar.
+    const ticketCode =
+      at("ticketCode") ?? fallbackTicketCode({ email, firstName, lastName, organization });
+
     const key = ticketCode.toLowerCase();
-    if (seen.has(key)) {
-      skipped.push({ line, reason: `Ticketcode "${ticketCode}" doppelt in der Datei` });
-      return;
+    const firstOccurrence = seen.get(key);
+    if (firstOccurrence !== undefined) {
+      skipped.push({
+        line,
+        reason: `Dieselbe Person steht schon in Zeile ${firstOccurrence}`,
+      });
+      continue;
     }
-    seen.add(key);
+    seen.set(key, line);
 
     parsed.push({
       ticketCode,
       firstName: firstName ?? "",
       lastName: lastName ?? firstName ?? "",
-      email: at("email")?.toLowerCase() ?? null,
-      organization: at("organization"),
+      email,
+      organization,
       source: at("source"),
       supportNeeds: at("supportNeeds"),
       ticketType: at("ticketType"),
       notes: at("notes"),
     });
-  });
+  }
 
-  return { rows: parsed, headers: headerRow, mapping, skipped };
+  return { rows: parsed, headers: headerRecord.cells, mapping, skipped };
 }
 
 export function toCsv(headers: string[], rows: (string | number | null)[][]): string {

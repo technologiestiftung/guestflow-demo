@@ -74,7 +74,11 @@ export function AccessPanel({
         Zugang am Eingang
       </SectionHead>
 
-      <div className="-mb-px mt-5 flex border-b border-[var(--line)]">
+      <div
+        role="tablist"
+        aria-label="Zugangsweg wählen"
+        className="-mb-px mt-5 flex border-b border-[var(--line)]"
+      >
         {(
           [
             { key: "qr", label: "QR-Aushang" },
@@ -83,6 +87,8 @@ export function AccessPanel({
         ).map((tab) => (
           <button
             key={tab.key}
+            role="tab"
+            aria-selected={channel === tab.key}
             onClick={() => setChannel(tab.key)}
             className={cn(
               "border-b-2 px-3.5 pb-2.5 text-sm transition-colors",

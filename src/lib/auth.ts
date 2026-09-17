@@ -35,11 +35,10 @@ export function safeEqual(a: string, b: string): boolean {
   const encoder = new TextEncoder();
   const ab = encoder.encode(a);
   const bb = encoder.encode(b);
-  if (ab.length !== bb.length) {
-    // Trotzdem vergleichen, damit die Laufzeit nicht von der Länge abhängt.
-    crypto.getRandomValues(new Uint8Array(1));
-    return false;
-  }
+  // Unterschiedliche Länge verrät nur die Länge. Alle Aufrufer vergleichen
+  // ohnehin Werte fester Länge (HMAC-Ausgaben), deshalb tritt der Fall im
+  // Normalbetrieb nicht ein.
+  if (ab.length !== bb.length) return false;
   let diff = 0;
   for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
   return diff === 0;
@@ -68,9 +67,20 @@ export async function isAuthenticated(): Promise<boolean> {
   return verifySessionToken(store.get(SESSION_COOKIE)?.value);
 }
 
+/** Nur einmal pro Prozess warnen, nicht bei jedem Anmeldeversuch. */
+let weakPasswordWarned = false;
+
 export async function checkPassword(candidate: string): Promise<boolean> {
   const expected = process.env.ADMIN_PASSWORD;
   if (!expected) throw new Error("ADMIN_PASSWORD ist nicht gesetzt.");
+
+  if (!weakPasswordWarned && expected.length < 16) {
+    weakPasswordWarned = true;
+    console.warn(
+      "[GuestFlow] ADMIN_PASSWORD ist kürzer als 16 Zeichen. Der Team-Bereich hängt an " +
+        "genau diesem Wert — bitte ein langes, zufälliges Passwort setzen (./scripts/init-env.sh).",
+    );
+  }
   // Über den Hash vergleichen, damit unterschiedliche Längen nichts verraten.
   const [a, b] = await Promise.all([hmac(`pw:${candidate}`), hmac(`pw:${expected}`)]);
   return safeEqual(a, b);
