@@ -1,0 +1,72 @@
+# GuestFlow — Self-Check-in für Veranstaltungen
+#
+# Start:  ./scripts/init-env.sh && docker compose up -d --build
+#
+# Alle Zugangsdaten kommen aus der Datei .env und stehen bewusst nirgends
+# in dieser Datei. Die Datenbankadresse wird zur Laufzeit aus den Einzelteilen
+# zusammengesetzt (siehe DB_HOST/DB_PORT im app-Service).
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB fehlt - bitte .env anlegen}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER fehlt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
+      # Sichere Prüfsummen statt md5 für neue Verbindungen.
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    # Nur an 127.0.0.1 gebunden - fuer psql und `npm run dev` vom Host aus,
+    # nicht aus dem Netz erreichbar.
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - guestflow
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD fehlt - bitte .env anlegen}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET fehlt - bitte .env anlegen}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      NODE_ENV: production
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    networks:
+      - guestflow
+    security_opt:
+      - no-new-privileges:true
+    # Die Anwendung schreibt nichts ins Dateisystem außer Next.js-Cache.
+    tmpfs:
+      - /tmp
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  db-data:
+
+networks:
+  guestflow:
+    driver: bridge

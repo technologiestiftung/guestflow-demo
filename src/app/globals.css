@@ -1,0 +1,215 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   GuestFlow — Gestaltung
+   Papier, Tusche, Haarlinie, ein Akzent. Keine Verläufe, keine Schatten,
+   keine weichen Kanten. Hierarchie entsteht durch Typografie, Weißraum und
+   Linien — nicht durch Farbe.
+   =========================================================================== */
+
+@theme {
+  /* Flächen */
+  --color-paper: oklch(0.985 0.002 95);
+  --color-paper-sunk: oklch(0.965 0.003 95);
+  --color-ink: oklch(0.16 0.004 95);
+  --color-ink-soft: oklch(0.43 0.004 95);
+  --color-ink-faint: oklch(0.62 0.004 95);
+
+  /* Linien */
+  --color-rule: oklch(0.885 0.004 95);
+  --color-rule-strong: oklch(0.78 0.005 95);
+
+  /* Der eine Akzent */
+  --color-accent: oklch(0.45 0.25 268);
+  --color-accent-soft: oklch(0.94 0.035 268);
+
+  /* Nur für Zustände, die man nicht übersehen darf */
+  --color-signal: oklch(0.58 0.16 55);
+  --color-signal-soft: oklch(0.95 0.04 70);
+  --color-alert: oklch(0.52 0.2 27);
+
+  --font-sans:
+    ui-sans-serif, -apple-system, "Helvetica Neue", "Inter", "Segoe UI", Roboto,
+    "Noto Sans", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Kanten bleiben scharf. */
+  --radius-none: 0px;
+  --radius-xs: 1px;
+
+  --animate-rise: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade: fade 0.35s ease-out both;
+  --animate-wipe: wipe 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-rule: rule 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-draw: draw 0.55s cubic-bezier(0.65, 0, 0.35, 1) 0.1s both;
+  --animate-scan: scan 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  --animate-tick: tick 1.6s steps(2, start) infinite;
+  --animate-rotate: rotate 0.9s linear infinite;
+  --animate-ping-square: ping-square 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+/* Bewegung: kurz, gerichtet, ohne Federn. */
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* Inhalt wird aufgedeckt statt eingeblendet — ruhiger und präziser. */
+@keyframes wipe {
+  from { opacity: 0; clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+@keyframes rule {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes scan {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+@keyframes tick {
+  50% { opacity: 0; }
+}
+@keyframes rotate {
+  to { transform: rotate(360deg); }
+}
+@keyframes ping-square {
+  0% { transform: scale(1); opacity: 0.5; }
+  70%, 100% { transform: scale(1.7); opacity: 0; }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --page: var(--color-paper);
+    --page-sunk: var(--color-paper-sunk);
+    --text: var(--color-ink);
+    --text-soft: var(--color-ink-soft);
+    --text-faint: var(--color-ink-faint);
+    --line: var(--color-rule);
+    --line-strong: var(--color-rule-strong);
+  }
+
+  /* Abends im Foyer ist ein heller Schirm unangenehm — dieselbe Sprache, invertiert. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page: oklch(0.145 0.003 95);
+      --page-sunk: oklch(0.185 0.003 95);
+      --text: oklch(0.96 0.002 95);
+      --text-soft: oklch(0.72 0.004 95);
+      --text-faint: oklch(0.55 0.004 95);
+      --line: oklch(0.29 0.004 95);
+      --line-strong: oklch(0.4 0.004 95);
+      --color-accent: oklch(0.72 0.17 268);
+      --color-accent-soft: oklch(0.27 0.07 268);
+      --color-signal: oklch(0.76 0.14 65);
+      --color-signal-soft: oklch(0.28 0.06 65);
+      --color-alert: oklch(0.68 0.18 27);
+    }
+  }
+
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--page);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv05", "tnum" 0;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.011em;
+  }
+
+  h1, h2, h3 {
+    letter-spacing: -0.028em;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-paper);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  input, select, textarea, button {
+    font: inherit;
+    letter-spacing: inherit;
+  }
+
+  ::placeholder {
+    color: var(--text-faint);
+  }
+}
+
+@layer components {
+  /* Das einzige Flächenelement: eine Fläche mit Haarlinie. Kein Schatten. */
+  .panel {
+    background: var(--page);
+    border: 1px solid var(--line);
+  }
+
+  .panel-sunk {
+    background: var(--page-sunk);
+    border: 1px solid var(--line);
+  }
+
+  /* Mikrotypografie für Beschriftungen über Zahlen und Abschnitten. */
+  .label {
+    font-size: 0.6875rem;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  /* Zahlen sollen in Tabellen und Kacheln untereinander stehen. */
+  .num {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+  }
+
+  /* Verzögerung für gestaffelte Listen: style={{ '--d': '120ms' }} */
+  .stagger {
+    animation-delay: var(--d, 0ms);
+  }
+}
+
+/* Bewegung ist Beiwerk — wer sie abbestellt hat, bekommt den Endzustand. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Namensschild und Aushang: alles andere verschwindet im Druck. */
+@media print {
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

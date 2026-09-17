@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <rect width="180" height="180" fill="#0c0c0c"/>
+  <!-- Strichstaerken gelten im skalierten Koordinatensystem (x4.6). -->
+  <g fill="none" stroke="#fcfcfa" stroke-width="2.4" stroke-linecap="square"
+     transform="translate(90 90) scale(4.6) translate(-16 -16)">
+    <g opacity="0.45">
+      <path d="M4 10h5"/>
+      <path d="M4 16h8"/>
+      <path d="M4 22h5"/>
+    </g>
+    <path d="M13 17.2 18 22 28 10" stroke-width="2.9"/>
+  </g>
+</svg>

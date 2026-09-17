@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+
+# Zugangsdaten - niemals ins Repository.
+.env
+.env.*
+!.env.example
+
+# Datenbank-Dumps enthalten Gaestedaten.
+*.dump
+*.sql.gz
+/backups/
