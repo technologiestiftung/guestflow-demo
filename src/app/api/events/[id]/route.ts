@@ -18,6 +18,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     "manualSearch",
     "allowReEntry",
     "selfServiceEnabled",
+    "emailOnlyLookup",
   ] as const) {
     if (typeof body?.[flag] === "boolean") patch[flag] = body[flag];
   }

@@ -194,6 +194,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               selfServiceEnabled: event.selfServiceEnabled,
               badgePrinting: event.badgePrinting,
               manualSearch: event.manualSearch,
+              emailOnlyLookup: event.emailOnlyLookup,
               allowReEntry: event.allowReEntry,
             }}
           />

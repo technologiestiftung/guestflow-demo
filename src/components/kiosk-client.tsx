@@ -33,6 +33,10 @@ type SearchResult = {
   alreadyCheckedIn: boolean;
 };
 
+/** Vom Server gereicht; bewusst nicht aus guest-lookup importiert — das Modul
+ *  hängt an der Datenbank und gehört nicht ins Browser-Bundle. */
+export type SearchLabels = { label: string; placeholder: string; help: string };
+
 const RESET_AFTER_SUCCESS = 6000;
 const RESET_AFTER_ERROR = 9000;
 
@@ -41,11 +45,13 @@ export function KioskClient({
   eventName,
   manualSearch,
   badgePrinting,
+  searchLabels,
 }: {
   slug: string;
   eventName: string;
   manualSearch: boolean;
   badgePrinting: boolean;
+  searchLabels: SearchLabels;
 }) {
   const [mode, setMode] = useState<"scan" | "search">("scan");
   const [busy, setBusy] = useState(false);
@@ -207,6 +213,7 @@ export function KioskClient({
             busy={busy}
             onPick={(id) => submit({ guestId: id, method: "manual" })}
             onBack={reset}
+            labels={searchLabels}
           />
         )}
       </main>
@@ -517,6 +524,7 @@ function SearchPanel({
   busy,
   onPick,
   onBack,
+  labels,
 }: {
   query: string;
   onQuery: (value: string) => void;
@@ -525,6 +533,7 @@ function SearchPanel({
   busy: boolean;
   onPick: (id: string) => void;
   onBack: () => void;
+  labels: SearchLabels;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -536,22 +545,20 @@ function SearchPanel({
       <p className="label">Anmeldung suchen</p>
 
       <h1 className="mt-5 text-[2rem] leading-[1.05] font-medium tracking-[-0.035em] text-balance sm:text-[2.75rem]">
-        Suchen Sie Ihren Namen
+        Anmeldung finden
       </h1>
-      <p className="mt-4 text-[var(--text-soft)] text-pretty">
-        Nachname oder E-Mail-Adresse, mit der Sie sich angemeldet haben.
-      </p>
+      <p className="mt-4 text-[var(--text-soft)] text-pretty">{labels.help}</p>
 
       <Input
         ref={inputRef}
         value={query}
         onChange={(event) => onQuery(event.target.value)}
-        placeholder="Nachname"
+        placeholder={labels.placeholder}
         autoComplete="off"
         autoCapitalize="none"
         spellCheck={false}
         className="mt-8 h-16 px-4 text-xl"
-        aria-label="Nachname oder E-Mail-Adresse"
+        aria-label={labels.label}
       />
 
       {results.length > 0 ? (

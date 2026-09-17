@@ -119,6 +119,12 @@ Verdolmetschung, Begleitperson …), löst ihr Check-in im Team-Bereich sofort a
 Der Hinweis bleibt offen, bis jemand ihn mit „Übernommen“ quittiert. Auf dem Namensschild
 erscheint lediglich ein dezentes Quadrat — der Grund steht dort nicht.
 
+### Suche vor Ort
+
+Findet jemand seinen QR-Code nicht, lässt sich die Anmeldung über ein Eingabefeld suchen —
+am Kiosk und auf der Gästeseite. Wie großzügig gesucht werden darf, ist je Veranstaltung
+einstellbar; siehe *Namenssuche abschalten* unter „Sicherheit und Zugangskontrolle“.
+
 ### Anwesenheitsliste
 
 Die Gästeliste lässt sich nach *Alle / Anwesend / Ausstehend / Assistenz* filtern und
@@ -184,7 +190,30 @@ beschriebenen Plaketten auf einen Schlag ungültig machen.
 **Suche.** Um zu verhindern, dass die Gästeliste über die Suchfunktion abgeschöpft wird:
 mindestens drei Zeichen, höchstens fünf bis sechs Treffer (darüber wird zur präziseren
 Eingabe aufgefordert statt Ergebnisse auszuspielen), E-Mail-Adressen werden verkürzt
-angezeigt, und alle Endpunkte sind mengenbegrenzt. Die Grenzwerte der Gästeseite sind
+angezeigt, und alle Endpunkte sind mengenbegrenzt.
+
+**Namenssuche abschalten.** Standardmäßig findet die Suche auch Teiltreffer im Namen — wer
+„Mül" eingibt, bekommt die Namen aller Müllers der Gästeliste zu sehen. Das ist bequem,
+gibt aber Namen an Unbeteiligte preis. Mit der Einstellung **„Nur exakte E-Mail-Suche"**
+werden ausschließlich die vollständige E-Mail-Adresse und der Ticketcode akzeptiert. Ein
+Treffer setzt dann voraus, dass man den gesuchten Wert ohnehin schon kennt; aus der Liste
+lässt sich nichts mehr erraten.
+
+Die Einstellung gilt für Kiosk und Gästeseite gleichermaßen, und die Beschriftung der
+Eingabefelder wechselt automatisch mit — sonst würden Gäste weiter nach ihrem Nachnamen
+gefragt und fänden sich nicht.
+
+| Eingabe | Standard | Nur exakte E-Mail |
+| --- | --- | --- |
+| Teil des Nachnamens | alle passenden Namen | kein Treffer |
+| vollständiger Name | Treffer | kein Treffer |
+| Teil der E-Mail-Adresse | Treffer | kein Treffer |
+| vollständige E-Mail-Adresse | Treffer | Treffer |
+| Ticketcode | Treffer | Treffer |
+
+Abzuwägen ist der Aufwand für die Gäste: Eine vollständige Adresse auf dem Telefon
+einzutippen dauert länger als ein Nachname. Bei Veranstaltungen mit sensiblem Teilnehmerkreis
+wiegt das den Zugewinn meist auf. Die Grenzwerte der Gästeseite sind
 bewusst großzügig: Beim Einlass tippen viele Menschen gleichzeitig, alle hinter derselben
 öffentlichen Adresse des Veranstaltungs-WLANs. Der eigentliche Schutz ist dort der
 Zugangsschlüssel, nicht die Mengenbegrenzung.

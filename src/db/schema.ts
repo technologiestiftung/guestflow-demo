@@ -41,6 +41,16 @@ export const events = pgTable(
     badgePrinting: boolean("badge_printing").notNull().default(true),
     /** Kiosk erlaubt Suche per Name/E-Mail, wenn der QR-Code nicht lesbar ist */
     manualSearch: boolean("manual_search").notNull().default(true),
+    /**
+     * Suche nur über die vollständige E-Mail-Adresse oder den Ticketcode.
+     *
+     * Ohne diesen Schalter findet eine Namenssuche auch Teiltreffer — wer
+     * "Mül" eingibt, bekommt die Namen aller Müllers der Gästeliste zu sehen.
+     * Ist er gesetzt, muss die Eingabe exakt passen; aus der Liste lässt sich
+     * dann nichts mehr erraten, weil ein Treffer voraussetzt, dass man die
+     * Adresse ohnehin schon kennt.
+     */
+    emailOnlyLookup: boolean("email_only_lookup").notNull().default(false),
     /** Wiedereintritt ohne erneute Prüfung zulassen */
     allowReEntry: boolean("allow_re_entry").notNull().default(true),
     /**

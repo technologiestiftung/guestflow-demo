@@ -6,6 +6,7 @@ import { guests } from "@/db/schema";
 import { GuestFlowLogo } from "@/components/brand";
 import { SelfCheckinClient } from "@/components/self-checkin-client";
 import { displayName, getEventBySlug } from "@/lib/checkin";
+import { lookupLabels } from "@/lib/guest-lookup";
 import { hasEventAccess, readPass } from "@/lib/self-service";
 import { formatDate, formatTime } from "@/lib/utils";
 
@@ -70,6 +71,7 @@ export default async function SelfCheckinPage({
         <SelfCheckinClient
           slug={event.slug}
           channel={channel}
+          searchLabels={lookupLabels(event)}
           returning={
             known
               ? {

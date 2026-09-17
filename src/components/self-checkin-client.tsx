@@ -19,15 +19,21 @@ type Match = {
   alreadyCheckedIn: boolean;
 };
 
+/** Vom Server gereicht; guest-lookup hängt an der Datenbank und gehört nicht
+ *  in das Browser-Bundle. */
+type SearchLabels = { label: string; placeholder: string; help: string };
+
 export function SelfCheckinClient({
   slug,
   returning,
   channel = "qr",
+  searchLabels,
 }: {
   slug: string;
   returning: Guest | null;
   /** Über welchen Weg der Gast hergekommen ist — nur für die Auswertung. */
   channel?: "qr" | "nfc";
+  searchLabels: SearchLabels;
 }) {
   const [guest, setGuest] = useState<Guest | null>(returning);
   const [confirmed, setConfirmed] = useState(false);
@@ -111,7 +117,7 @@ export function SelfCheckinClient({
     <div className="animate-rise mt-10 border-t border-[var(--line)] pt-8">
       <form onSubmit={search}>
         <label htmlFor="q" className="label mb-3 block">
-          E-Mail oder Nachname aus Ihrer Anmeldung
+          {searchLabels.label}
         </label>
         <div className="flex">
           <Input
@@ -119,7 +125,7 @@ export function SelfCheckinClient({
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="name@beispiel.de"
+            placeholder={searchLabels.placeholder}
             type="text"
             inputMode="email"
             autoComplete="email"

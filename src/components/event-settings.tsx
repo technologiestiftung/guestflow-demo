@@ -9,6 +9,7 @@ type Flags = {
   selfServiceEnabled: boolean;
   badgePrinting: boolean;
   manualSearch: boolean;
+  emailOnlyLookup: boolean;
   allowReEntry: boolean;
 };
 
@@ -25,8 +26,13 @@ const OPTIONS: { key: keyof Flags; label: string; hint: string }[] = [
   },
   {
     key: "manualSearch",
-    label: "Suche nach Namen",
+    label: "Suche am Kiosk",
     hint: "Fallback am Kiosk, wenn der QR-Code nicht lesbar ist.",
+  },
+  {
+    key: "emailOnlyLookup",
+    label: "Nur exakte E-Mail-Suche",
+    hint: "Keine Namenssuche. Gefunden wird nur, wer die vollständige Adresse oder den Ticketcode eingibt — so bekommt niemand fremde Namen zu sehen.",
   },
   {
     key: "allowReEntry",

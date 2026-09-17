@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { KioskClient } from "@/components/kiosk-client";
 import { getEventBySlug } from "@/lib/checkin";
+import { lookupLabels } from "@/lib/guest-lookup";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function KioskPage({ params }: { params: Promise<{ slug: st
         eventName={event.name}
         manualSearch={event.manualSearch}
         badgePrinting={event.badgePrinting}
+        searchLabels={lookupLabels(event)}
       />
     </div>
   );
