@@ -1,30 +1,18 @@
 import { db } from "@/db";
 import { events } from "@/db/schema";
 import { fail, json, requireAdmin } from "@/lib/api";
-import { clampString, slugify } from "@/lib/utils";
+import { slugify } from "@/lib/utils";
+import { createEventSchema, readJson } from "@/lib/validation";
 import { createPublicToken } from "@/lib/tokens";
 
 export async function POST(request: Request) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const body = await request.json().catch(() => null);
-  const name = clampString(body?.name, 160);
-  const location = clampString(body?.location, 160);
-  const startsAtRaw = clampString(body?.startsAt, 40);
-  const capacityRaw = body?.capacity;
+  const parsed = await readJson(request, createEventSchema);
+  if (!parsed.isValid) return fail(parsed.error);
 
-  if (!name) return fail("Name der Veranstaltung fehlt.");
-  const startsAt = new Date(startsAtRaw);
-  if (Number.isNaN(startsAt.getTime())) return fail("Datum ist ungültig.");
-
-  const capacity =
-    capacityRaw === null || capacityRaw === undefined || capacityRaw === ""
-      ? null
-      : Number(capacityRaw);
-  if (capacity !== null && (!Number.isInteger(capacity) || capacity < 1)) {
-    return fail("Kapazität muss eine positive ganze Zahl sein.");
-  }
+  const { name, location, startsAt, capacity } = parsed.data;
 
   // Slug muss eindeutig sein — bei Kollision zählen wir hoch.
   const base = slugify(name) || "veranstaltung";
@@ -45,7 +33,7 @@ export async function POST(request: Request) {
       slug,
       location: location || null,
       startsAt,
-      capacity,
+      capacity: capacity ?? null,
       publicToken: createPublicToken(),
     })
     .returning();

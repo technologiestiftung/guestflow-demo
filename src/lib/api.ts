@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAuthenticated } from "./auth";
+import { isAuthenticated } from "@/lib/auth";
 
 export function json<T>(data: T, init?: ResponseInit) {
   return NextResponse.json(data, init);

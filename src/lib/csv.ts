@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+import { parseImportedPin } from "@/lib/pin";
+
 /**
  * Kleiner RFC-4180-Parser. Doo-Exporte kommen je nach Locale mit Komma oder
  * Semikolon, mit BOM und mit Feldern in Anführungszeichen — das deckt das hier ab.
@@ -108,6 +110,7 @@ const FIELD_ALIASES: Record<string, string[]> = {
     "support", "supportneeds", "assistenz", "verdolmetschung", "besonderebeduerfnisse",
   ],
   ticketType: ["tickettyp", "tickettype", "ticketkategorie", "ticketart", "kategorie"],
+  pin: ["pin", "pincode", "pinnummer", "checkinpin", "zugangspin", "zugangscode"],
   notes: ["notiz", "notizen", "notes", "bemerkung", "kommentar", "anmerkung"],
 };
 
@@ -116,30 +119,44 @@ export type ColumnMapping = Partial<Record<keyof typeof FIELD_ALIASES, number>>;
 export function mapColumns(headerRow: string[]): ColumnMapping {
   const normalized = headerRow.map(normalizeHeader);
   const mapping: ColumnMapping = {};
-  for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
-    // Exakter Treffer geht vor, sonst "enthält" — "Name" darf nicht "Vorname" kapern.
-    // Innerhalb einer Runde entscheidet die Reihenfolge der Aliasse, nicht die
-    // der Spalten: Doo exportiert Bestellnummer und Ticket-Nr. nebeneinander,
-    // und nur die Ticket-Nr. steckt im QR-Code. Stünde die Bestellnummer weiter
-    // links, würde sie als Ticketcode gespeichert — die Bestellnummer wiederholt
-    // sich bei Sammelbestellungen, es blieben also Gäste als Dubletten liegen.
-    let index = findByAlias(normalized, aliases, (h, alias) => h === alias);
-    if (index === -1) {
-      index = findByAlias(normalized, aliases, (h, alias) => h.length > 3 && h.includes(alias));
+  const claimed = new Set<number>();
+
+  // Erst alle exakten Treffer, dann erst die unscharfen. Sonst griffe sich ein
+  // frueher Alias per "enthaelt" eine Spalte, die spaeter exakt passen wuerde:
+  // "PIN-Code" enthaelt "code" und landete als Ticketcode, obwohl "pin" exakt
+  // passt. Eine belegte Spalte wird nicht erneut vergeben.
+  for (const exact of [true, false]) {
+    for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
+      if (mapping[field as keyof ColumnMapping] !== undefined) continue;
+
+      // Innerhalb eines Feldes entscheidet die Reihenfolge der Aliasse, nicht
+      // die der Spalten: Doo exportiert Bestellnummer und Ticket-Nr.
+      // nebeneinander, und nur die Ticket-Nr. steckt im QR-Code. Stuende die
+      // Bestellnummer weiter links, wuerde sie als Ticketcode gespeichert - die
+      // Bestellnummer wiederholt sich bei Sammelbestellungen, es blieben also
+      // Gaeste als Dubletten liegen.
+      const index = findByAlias(normalized, aliases, claimed, (header, alias) =>
+        exact ? header === alias : header.length > 3 && header.includes(alias),
+      );
+      if (index !== -1) {
+        mapping[field as keyof ColumnMapping] = index;
+        claimed.add(index);
+      }
     }
-    if (index !== -1) mapping[field as keyof ColumnMapping] = index;
   }
+
   return mapping;
 }
 
-/** Erster Spaltentreffer für den am höchsten priorisierten Alias. */
+/** Erster freier Spaltentreffer fuer den am hoechsten priorisierten Alias. */
 function findByAlias(
   headers: string[],
   aliases: string[],
+  claimed: Set<number>,
   matches: (header: string, alias: string) => boolean,
 ): number {
   for (const alias of aliases) {
-    const index = headers.findIndex((h) => matches(h, alias));
+    const index = headers.findIndex((header, i) => !claimed.has(i) && matches(header, alias));
     if (index !== -1) return index;
   }
   return -1;
@@ -154,6 +171,7 @@ export type ImportRow = {
   source: string | null;
   supportNeeds: string | null;
   ticketType: string | null;
+  pin: string | null;
   notes: string | null;
 };
 
@@ -249,6 +267,7 @@ export function parseGuestList(csvText: string): ParsedImport {
       source: at("source"),
       supportNeeds: at("supportNeeds"),
       ticketType: at("ticketType"),
+      pin: parseImportedPin(at("pin")),
       notes: at("notes"),
     });
   }

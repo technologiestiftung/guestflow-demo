@@ -2,11 +2,12 @@ import { cookies } from "next/headers";
 import { checkPassword, createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { fail, json } from "@/lib/api";
 import { clientKey, LIMITS, rateLimit } from "@/lib/rate-limit";
+import { loginSchema, readJson } from "@/lib/validation";
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null);
-  const password = typeof body?.password === "string" ? body.password : "";
-  if (!password) return fail("Passwort fehlt.");
+  const parsed = await readJson(request, loginSchema);
+  if (!parsed.isValid) return fail(parsed.error);
+  const { password } = parsed.data;
 
   // Bewusst zuerst prüfen, dann erst Budget verbrauchen: Ein richtiges Passwort
   // kommt dadurch auch dann durch, wenn jemand die Begrenzung mit falschen

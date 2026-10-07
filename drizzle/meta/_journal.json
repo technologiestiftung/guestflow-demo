@@ -22,6 +22,20 @@
       "when": 1789650817155,
       "tag": "0002_email_only_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791370132782,
+      "tag": "0003_add_lookup_mode_and_pin",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791370143877,
+      "tag": "0004_drop_email_only_lookup",
+      "breakpoints": true
     }
   ]
 }

@@ -1,21 +1,21 @@
-﻿Bestellnummer;Ticket-Nr.;Ticketkategorie;Anrede;Vorname;Nachname;E-Mail;Firma;Position;Wie haben Sie von der Veranstaltung erfahren?;Benötigen Sie Unterstützung? (Barrierefreiheit);Notiz;Bestelldatum;Zahlungsstatus
-10241;DOO-4H7QK2;Standard;Frau;Miriam;Kellerhoff;m.kellerhoff@stadtwerke-musterstadt.example;Stadtwerke Musterstadt;Referentin Digitalisierung;Newsletter;-;;2026-08-14 09:31;bezahlt
-10241;DOO-9PLZ3T;Standard;Herr;Tobias;Wernicke;t.wernicke@stadtwerke-musterstadt.example;Stadtwerke Musterstadt;Projektleitung;Newsletter;;;2026-08-14 09:31;bezahlt
-10242;DOO-2XMB8V;Standard;;Andrea;Söllner;a.soellner@hs-beispielstadt.example;Hochschule Beispielstadt;Wissenschaftliche Mitarbeiterin;Empfehlung;"Rollstuhlgerechter Zugang; Sitzplatz am Gang";;2026-08-15 16:02;bezahlt
-10243;DOO-7GKD1N;Standard;Herr;Jannis;Ovtcharenko;j.ovtcharenko@hs-beispielstadt.example;Hochschule Beispielstadt;Doktorand;Website;;;2026-08-16 11:47;bezahlt
-10244;DOO-5RTW6Y;Presse;Frau;Leonie;Habermas;redaktion@beispielstadt-kurier.example;Beispielstadt Kurier;Redakteurin;Presseverteiler;;Fotogenehmigung liegt vor;2026-08-18 08:12;bezahlt
-10244;DOO-3QNF9C;Presse;;Kai;Brentano;k.brentano@beispielstadt-kurier.example;Beispielstadt Kurier;Fotograf;Presseverteiler;-;"Kommt mit Stativ, braucht Platz vorne";2026-08-18 08:12;bezahlt
-10245;DOO-8BVX4L;Standard;Frau;Sabine;Grothusen;s.grothusen@digitale-nachbarschaft.example;Verein Digitale Nachbarschaft;Vorstand;Social Media;Verdolmetschung in Deutscher Gebärdensprache;Dolmetscherin ist separat angemeldet;2026-08-19 19:24;bezahlt
-10245;DOO-6JHS2D;Begleitperson;;Ruth;Grothusen;;Verein Digitale Nachbarschaft;;Social Media;"Begleitperson, kein eigener Sitzplatz nötig";;2026-08-19 19:24;bezahlt
-10246;DOO-1WCP7R;Standard;Herr;Emre;Yüksel;e.yueksel@bezirksamt-musterbezirk.example;Bezirksamt Musterbezirk;Sachbearbeitung;Interne Einladung;;;2026-08-20 10:05;bezahlt
-10246;DOO-4LDM5K;Standard;Frau;Christine;Aufderheide;c.aufderheide@bezirksamt-musterbezirk.example;Bezirksamt Musterbezirk;Amtsleitung;Interne Einladung;;Begrüßung um 18:10 Uhr;2026-08-20 10:05;bezahlt
-10247;DOO-9ZKT3B;VIP;Prof. Dr.;Hanne;Lindqvist;h.lindqvist@institut-beispiel.example;Institut für Beispielforschung;Direktorin;Persönliche Einladung;"Platz in der ersten Reihe (Sehbeeinträchtigung); Unterlagen in Großdruck";Keynote 18:30 Uhr;2026-08-21 07:58;bezahlt
-10247;DOO-2FQR8H;Standard;;Noah;Przybylski;n.przybylski@institut-beispiel.example;Institut für Beispielforschung;Assistenz;Persönliche Einladung;;;2026-08-21 07:58;bezahlt
-10248;DOO-7MTN4W;Standard;Herr;Vincent;Okonkwo;v.okonkwo@beispiel-gmbh.example;Beispiel GmbH;Geschäftsführung;Empfehlung;-;;2026-08-22 13:40;bezahlt
-10248;DOO-5CXG1P;Standard;Frau;Marlene;Duval-Ritter;m.duval-ritter@beispiel-gmbh.example;Beispiel GmbH;Marketing;Empfehlung;;;2026-08-22 13:40;bezahlt
-10249;DOO-8NRY6Q;Standard;Frau;Ayşe;Demirtaş;a.demirtas@quartiersbuero-nord.example;Quartiersbüro Nord;Quartiersmanagement;Website;Induktive Höranlage benötigt;;2026-08-25 17:19;bezahlt
-10250;DOO-3VJL9S;Standard;;Finn;Oberkamp;f.oberkamp@beispielmail.example;;Selbstständig;Social Media;;;2026-08-26 21:03;bezahlt
-10251;DOO-6KWA2Z;Standard;Herr;Gregor;Steinmetz-Bahr;g.steinmetz-bahr@landesverband-beispiel.example;Landesverband Beispiel e. V.;Referent;Newsletter;;;2026-08-27 09:14;bezahlt
-10252;DOO-1HPD7F;Ermäßigt;Frau;Ida;Kamphausen;i.kamphausen@studierendenwerk.example;Studierendenwerk Beispielstadt;Studentische Hilfskraft;Aushang vor Ort;;;2026-08-28 15:52;bezahlt
-10253;DOO-4STB8M;Standard;;Robin;Achterberg;r.achterberg@netzwerk-offen.example;Netzwerk Offene Verwaltung;Koordination;Empfehlung;"Barrierefreies WC; Zugang über den Seiteneingang nötig";;2026-08-31 12:26;bezahlt
-10254;;Standard;Frau;Bettina;Rauhut;b.rauhut@netzwerk-offen.example;Netzwerk Offene Verwaltung;Sprecherin;Empfehlung;;"Nachmeldung per E-Mail, kein Ticket versendet";2026-09-08 08:44;bezahlt
+﻿Bestellnummer;Ticket-Nr.;PIN;Ticketkategorie;Anrede;Vorname;Nachname;E-Mail;Firma;Position;Wie haben Sie von der Veranstaltung erfahren?;Benötigen Sie Unterstützung? (Barrierefreiheit);Notiz;Bestelldatum;Zahlungsstatus
+10241;DOO-4H7QK2;734812;Standard;Frau;Miriam;Kellerhoff;m.kellerhoff@stadtwerke-musterstadt.example;Stadtwerke Musterstadt;Referentin Digitalisierung;Newsletter;-;;2026-08-14 09:31;bezahlt
+10241;DOO-9PLZ3T;408265;Standard;Herr;Tobias;Wernicke;t.wernicke@stadtwerke-musterstadt.example;Stadtwerke Musterstadt;Projektleitung;Newsletter;;;2026-08-14 09:31;bezahlt
+10242;DOO-2XMB8V;915037;Standard;;Andrea;Söllner;a.soellner@hs-beispielstadt.example;Hochschule Beispielstadt;Wissenschaftliche Mitarbeiterin;Empfehlung;"Rollstuhlgerechter Zugang; Sitzplatz am Gang";;2026-08-15 16:02;bezahlt
+10243;DOO-7GKD1N;260948;Standard;Herr;Jannis;Ovtcharenko;j.ovtcharenko@hs-beispielstadt.example;Hochschule Beispielstadt;Doktorand;Website;;;2026-08-16 11:47;bezahlt
+10244;DOO-5RTW6Y;583174;Presse;Frau;Leonie;Habermas;redaktion@beispielstadt-kurier.example;Beispielstadt Kurier;Redakteurin;Presseverteiler;;Fotogenehmigung liegt vor;2026-08-18 08:12;bezahlt
+10244;DOO-3QNF9C;061329;Presse;;Kai;Brentano;k.brentano@beispielstadt-kurier.example;Beispielstadt Kurier;Fotograf;Presseverteiler;-;"Kommt mit Stativ, braucht Platz vorne";2026-08-18 08:12;bezahlt
+10245;DOO-8BVX4L;847502;Standard;Frau;Sabine;Grothusen;s.grothusen@digitale-nachbarschaft.example;Verein Digitale Nachbarschaft;Vorstand;Social Media;Verdolmetschung in Deutscher Gebärdensprache;Dolmetscherin ist separat angemeldet;2026-08-19 19:24;bezahlt
+10245;DOO-6JHS2D;;Begleitperson;;Ruth;Grothusen;;Verein Digitale Nachbarschaft;;Social Media;"Begleitperson, kein eigener Sitzplatz nötig";;2026-08-19 19:24;bezahlt
+10246;DOO-1WCP7R;392618;Standard;Herr;Emre;Yüksel;e.yueksel@bezirksamt-musterbezirk.example;Bezirksamt Musterbezirk;Sachbearbeitung;Interne Einladung;;;2026-08-20 10:05;bezahlt
+10246;DOO-4LDM5K;705243;Standard;Frau;Christine;Aufderheide;c.aufderheide@bezirksamt-musterbezirk.example;Bezirksamt Musterbezirk;Amtsleitung;Interne Einladung;;Begrüßung um 18:10 Uhr;2026-08-20 10:05;bezahlt
+10247;DOO-9ZKT3B;118960;VIP;Prof. Dr.;Hanne;Lindqvist;h.lindqvist@institut-beispiel.example;Institut für Beispielforschung;Direktorin;Persönliche Einladung;"Platz in der ersten Reihe (Sehbeeinträchtigung); Unterlagen in Großdruck";Keynote 18:30 Uhr;2026-08-21 07:58;bezahlt
+10247;DOO-2FQR8H;;Standard;;Noah;Przybylski;n.przybylski@institut-beispiel.example;Institut für Beispielforschung;Assistenz;Persönliche Einladung;;;2026-08-21 07:58;bezahlt
+10248;DOO-7MTN4W;564037;Standard;Herr;Vincent;Okonkwo;v.okonkwo@beispiel-gmbh.example;Beispiel GmbH;Geschäftsführung;Empfehlung;-;;2026-08-22 13:40;bezahlt
+10248;DOO-5CXG1P;239815;Standard;Frau;Marlene;Duval-Ritter;m.duval-ritter@beispiel-gmbh.example;Beispiel GmbH;Marketing;Empfehlung;;;2026-08-22 13:40;bezahlt
+10249;DOO-8NRY6Q;480672;Standard;Frau;Ayşe;Demirtaş;a.demirtas@quartiersbuero-nord.example;Quartiersbüro Nord;Quartiersmanagement;Website;Induktive Höranlage benötigt;;2026-08-25 17:19;bezahlt
+10250;DOO-3VJL9S;906341;Standard;;Finn;Oberkamp;f.oberkamp@beispielmail.example;;Selbstständig;Social Media;;;2026-08-26 21:03;bezahlt
+10251;DOO-6KWA2Z;357028;Standard;Herr;Gregor;Steinmetz-Bahr;g.steinmetz-bahr@landesverband-beispiel.example;Landesverband Beispiel e. V.;Referent;Newsletter;;;2026-08-27 09:14;bezahlt
+10252;DOO-1HPD7F;;Ermäßigt;Frau;Ida;Kamphausen;i.kamphausen@studierendenwerk.example;Studierendenwerk Beispielstadt;Studentische Hilfskraft;Aushang vor Ort;;;2026-08-28 15:52;bezahlt
+10253;DOO-4STB8M;612495;Standard;;Robin;Achterberg;r.achterberg@netzwerk-offen.example;Netzwerk Offene Verwaltung;Koordination;Empfehlung;"Barrierefreies WC; Zugang über den Seiteneingang nötig";;2026-08-31 12:26;bezahlt
+10254;;873150;Standard;Frau;Bettina;Rauhut;b.rauhut@netzwerk-offen.example;Netzwerk Offene Verwaltung;Sprecherin;Empfehlung;;"Nachmeldung per E-Mail, kein Ticket versendet";2026-09-08 08:44;bezahlt
