@@ -2,9 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { events, guests, scans } from "@/db/schema";
 import { fail, json, requireAdmin } from "@/lib/api";
-import { clampString } from "@/lib/utils";
-
-type Action = "checkin" | "undo" | "ack_support" | "badge_printed";
+import { guestActionSchema, readJson } from "@/lib/validation";
 
 export async function POST(
   request: Request,
@@ -17,8 +15,9 @@ export async function POST(
   const event = await db.query.events.findFirst({ where: eq(events.id, id) });
   if (!event) return fail("Veranstaltung nicht gefunden.", 404);
 
-  const body = await request.json().catch(() => null);
-  const action = clampString(body?.action, 32) as Action;
+  const parsed = await readJson(request, guestActionSchema);
+  if (!parsed.isValid) return fail(parsed.error);
+  const { action } = parsed.data;
 
   const where = and(eq(guests.id, guestId), eq(guests.eventId, event.id));
   const guest = await db.query.guests.findFirst({ where });

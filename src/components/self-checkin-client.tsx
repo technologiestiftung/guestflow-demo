@@ -16,12 +16,17 @@ type Match = {
   name: string;
   organization: string | null;
   email: string | null;
-  alreadyCheckedIn: boolean;
+  hasCheckedIn: boolean;
 };
 
 /** Vom Server gereicht; guest-lookup hängt an der Datenbank und gehört nicht
  *  in das Browser-Bundle. */
-type SearchLabels = { label: string; placeholder: string; help: string };
+type SearchLabels = {
+  label: string;
+  placeholder: string;
+  help: string;
+  isNumeric: boolean;
+};
 
 export function SelfCheckinClient({
   slug,
@@ -127,12 +132,17 @@ export function SelfCheckinClient({
             onChange={(event) => setQuery(event.target.value)}
             placeholder={searchLabels.placeholder}
             type="text"
-            inputMode="email"
-            autoComplete="email"
+            // Zifferntastatur fuer die PIN, sonst die E-Mail-Tastatur.
+            inputMode={searchLabels.isNumeric ? "numeric" : "email"}
+            autoComplete={searchLabels.isNumeric ? "off" : "email"}
+            maxLength={searchLabels.isNumeric ? 7 : undefined}
             autoCapitalize="none"
             spellCheck={false}
             enterKeyHint="search"
-            className="h-12 border-r-0 text-base"
+            className={cn(
+              "h-12 border-r-0 text-base",
+              searchLabels.isNumeric && "tracking-[0.3em] tabular-nums",
+            )}
           />
           <Button type="submit" size="lg" className="shrink-0" disabled={busy || query.trim().length < 3}>
             {busy ? <Spinner className="border-[var(--page)] border-t-transparent" /> : "Suchen"}
@@ -163,7 +173,7 @@ export function SelfCheckinClient({
                   </span>
                 </span>
                 <span className="shrink-0 text-sm text-[var(--color-accent)]">
-                  {match.alreadyCheckedIn ? "Zurück" : "Das bin ich"}
+                  {match.hasCheckedIn ? "Zurück" : "Das bin ich"}
                 </span>
               </button>
             </li>

@@ -2,11 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import type { LookupMode } from "@/db/schema";
 import { Input } from "@/components/ui";
+import { formatPin } from "@/lib/pin";
 import { cn, formatTime, relativeTime } from "@/lib/utils";
 
 export type GuestRow = {
   id: string;
+  pin: string | null;
   firstName: string;
   lastName: string;
   organization: string | null;
@@ -27,7 +30,18 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "support", label: "Assistenz" },
 ];
 
-export function GuestTable({ eventId, guests }: { eventId: string; guests: GuestRow[] }) {
+export function GuestTable({
+  eventId,
+  guests,
+  lookupMode,
+}: {
+  eventId: string;
+  guests: GuestRow[];
+  lookupMode: LookupMode;
+}) {
+  // Die PIN steht nur dort, wo sie gebraucht wird: Im PIN-Modus muss der
+  // Empfang sie vorlesen koennen, sonst ist sie nur Rauschen in der Tabelle.
+  const showsPin = lookupMode === "pin";
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -51,7 +65,7 @@ export function GuestTable({ eventId, guests }: { eventId: string; guests: Guest
       if (filter === "open" && guest.checkedInAt) return false;
       if (filter === "support" && !guest.supportNeeds) return false;
       if (!needle) return true;
-      return [guest.firstName, guest.lastName, guest.organization, guest.email]
+      return [guest.firstName, guest.lastName, guest.organization, guest.email, guest.pin]
         .filter(Boolean)
         .some((field) => field!.toLowerCase().includes(needle));
     });
@@ -96,7 +110,7 @@ export function GuestTable({ eventId, guests }: { eventId: string; guests: Guest
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Name, Organisation, E-Mail"
+          placeholder={showsPin ? "Name, Organisation, E-Mail, PIN" : "Name, Organisation, E-Mail"}
           className="mb-2 h-9 w-full border-0 border-b border-[var(--line-strong)] px-0 text-sm sm:w-64"
           aria-label="Gästeliste durchsuchen"
         />
@@ -115,6 +129,7 @@ export function GuestTable({ eventId, guests }: { eventId: string; guests: Guest
               <tr className="border-b border-[var(--line)]">
                 <th className="label py-3 pr-4 font-medium">Gast</th>
                 <th className="label hidden py-3 pr-4 font-medium sm:table-cell">Organisation</th>
+                {showsPin ? <th className="label py-3 pr-4 font-medium">PIN</th> : null}
                 <th className="label py-3 pr-4 font-medium">Status</th>
                 <th className="label py-3 text-right font-medium">Aktion</th>
               </tr>
@@ -152,6 +167,12 @@ export function GuestTable({ eventId, guests }: { eventId: string; guests: Guest
                     <td className="hidden py-3 pr-4 text-[var(--text-soft)] sm:table-cell">
                       {guest.organization ?? "—"}
                     </td>
+
+                    {showsPin ? (
+                      <td className="num py-3 pr-4 tracking-[0.12em] whitespace-nowrap">
+                        {formatPin(guest.pin)}
+                      </td>
+                    ) : null}
 
                     <td className="py-3 pr-4">
                       {present ? (

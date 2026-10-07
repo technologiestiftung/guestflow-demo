@@ -84,6 +84,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   const rows: GuestRow[] = allGuests.map((guest) => ({
     id: guest.id,
+    pin: guest.pin,
     firstName: guest.firstName,
     lastName: guest.lastName,
     organization: guest.organization,
@@ -171,7 +172,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       <section className="mt-14">
         <SectionHead>Gästeliste</SectionHead>
         <div className="mt-6">
-          <GuestTable eventId={event.id} guests={rows} />
+          <GuestTable eventId={event.id} guests={rows} lookupMode={event.lookupMode} />
         </div>
       </section>
 
@@ -194,9 +195,9 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               selfServiceEnabled: event.selfServiceEnabled,
               badgePrinting: event.badgePrinting,
               manualSearch: event.manualSearch,
-              emailOnlyLookup: event.emailOnlyLookup,
               allowReEntry: event.allowReEntry,
             }}
+            lookupMode={event.lookupMode}
           />
 
           <DataPanel eventId={event.id} eventName={event.name} guestCount={stats.total} />

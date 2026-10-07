@@ -74,7 +74,7 @@ grep ADMIN_PASSWORD .env
 ### Import aus Doo
 
 Der CSV-Export wird hochgeladen; die Spalten werden anhand ihrer Überschriften automatisch
-erkannt — Vorname, Nachname, E-Mail, Organisation, Ticketcode, Tickettyp, Quelle,
+erkannt — Vorname, Nachname, E-Mail, Organisation, Ticketcode, PIN, Tickettyp, Quelle,
 Unterstützungsbedarf, Notiz. Erkannt werden gängige Schreibweisen und Umlaute, Semikolon
 und Komma als Trennzeichen sowie das BOM aus Excel-Exporten.
 
@@ -122,8 +122,9 @@ erscheint lediglich ein dezentes Quadrat — der Grund steht dort nicht.
 ### Suche vor Ort
 
 Findet jemand seinen QR-Code nicht, lässt sich die Anmeldung über ein Eingabefeld suchen —
-am Kiosk und auf der Gästeseite. Wie großzügig gesucht werden darf, ist je Veranstaltung
-einstellbar; siehe *Namenssuche abschalten* unter „Sicherheit und Zugangskontrolle“.
+am Kiosk und auf der Gästeseite. Wonach gesucht werden darf, ist je Veranstaltung
+einstellbar: Name und E-Mail, nur die exakte E-Mail-Adresse, oder nur eine sechsstellige
+PIN. Siehe *Suchmodus* unter „Sicherheit und Zugangskontrolle“.
 
 ### Anwesenheitsliste
 
@@ -192,31 +193,35 @@ mindestens drei Zeichen, höchstens fünf bis sechs Treffer (darüber wird zur p
 Eingabe aufgefordert statt Ergebnisse auszuspielen), E-Mail-Adressen werden verkürzt
 angezeigt, und alle Endpunkte sind mengenbegrenzt.
 
-**Namenssuche abschalten.** Standardmäßig findet die Suche auch Teiltreffer im Namen — wer
-„Mül" eingibt, bekommt die Namen aller Müllers der Gästeliste zu sehen. Das ist bequem,
-gibt aber Namen an Unbeteiligte preis. Mit der Einstellung **„Nur exakte E-Mail-Suche"**
-werden ausschließlich die vollständige E-Mail-Adresse und der Ticketcode akzeptiert. Ein
-Treffer setzt dann voraus, dass man den gesuchten Wert ohnehin schon kennt; aus der Liste
-lässt sich nichts mehr erraten.
+**Suchmodus.** Wonach vor Ort gesucht werden darf, ist je Veranstaltung einstellbar. Die
+Stufen schließen sich gegenseitig aus und gelten für Kiosk und Gästeseite gleichermaßen;
+die Beschriftung der Eingabefelder wechselt automatisch mit.
 
-Die Einstellung gilt für Kiosk und Gästeseite gleichermaßen, und die Beschriftung der
-Eingabefelder wechselt automatisch mit — sonst würden Gäste weiter nach ihrem Nachnamen
-gefragt und fänden sich nicht.
+| Eingabe | Name und E-Mail | Nur exakte E-Mail | Nur PIN |
+| --- | --- | --- | --- |
+| Teil des Nachnamens | alle passenden Namen | — | — |
+| vollständiger Name | Treffer | — | — |
+| Teil der E-Mail-Adresse | Treffer | — | — |
+| vollständige E-Mail-Adresse | Treffer | Treffer | — |
+| Ticketcode | Treffer | Treffer | — |
+| sechsstellige PIN | — | — | Treffer |
 
-| Eingabe | Standard | Nur exakte E-Mail |
-| --- | --- | --- |
-| Teil des Nachnamens | alle passenden Namen | kein Treffer |
-| vollständiger Name | Treffer | kein Treffer |
-| Teil der E-Mail-Adresse | Treffer | kein Treffer |
-| vollständige E-Mail-Adresse | Treffer | Treffer |
-| Ticketcode | Treffer | Treffer |
+*Name und E-Mail* ist bequem, gibt aber Namen an Unbeteiligte preis: Wer „Mül“ eingibt,
+bekommt alle Müllers der Gästeliste zu sehen. Bei den beiden strengeren Stufen muss die
+Eingabe exakt passen — ein Treffer setzt dann voraus, dass man den Wert ohnehin schon kennt.
 
-Abzuwägen ist der Aufwand für die Gäste: Eine vollständige Adresse auf dem Telefon
-einzutippen dauert länger als ein Nachname. Bei Veranstaltungen mit sensiblem Teilnehmerkreis
-wiegt das den Zugewinn meist auf. Die Grenzwerte der Gästeseite sind
-bewusst großzügig: Beim Einlass tippen viele Menschen gleichzeitig, alle hinter derselben
-öffentlichen Adresse des Veranstaltungs-WLANs. Der eigentliche Schutz ist dort der
-Zugangsschlüssel, nicht die Mengenbegrenzung.
+**PIN-Modus.** Jeder Gast hat eine sechsstellige PIN. Sie kommt aus einer PIN-Spalte des
+Doo-Exports, sonst vergibt GuestFlow sie beim Import. Einmal vergeben bleibt sie bestehen,
+damit ein zweiter Import bereits verschickte PINs nicht ungültig macht. Die PIN steht in der
+Gästeliste und im CSV-Export — **sie muss den Gästen vor der Veranstaltung zugehen**,
+sonst steht die Schlange am Empfang.
+
+Zur Belastbarkeit: Sechs Ziffern sind rund eine Million Kombinationen. Bei 500 Gästen trifft
+ein zufälliger Versuch mit etwa 1:2000 irgendeinen Gast — ohne Bremse wäre der Modus in
+wenigen Stunden durchprobiert. Fehlversuche sind deshalb je Veranstaltung auf 12 pro Minute
+und 120 pro Stunde begrenzt, über Kiosk und Gästeseite hinweg im selben Topf. Gezählt werden
+nur Fehlversuche; eine richtige PIN kommt immer durch, damit sich niemand durch fremde
+Rateversuche ausgesperrt findet. Eine zu kurze Eingabe gilt als Tippfehler und zählt nicht.
 
 **Protokoll.** Von gescannten Codes wird nur ein gekürzter Hinweis gespeichert
 (`AB…89 (12)`) — genug zur Fehlersuche, zu wenig zur Wiederverwendung.

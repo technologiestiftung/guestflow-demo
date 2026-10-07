@@ -6,7 +6,7 @@ import { fail, json } from "@/lib/api";
 import { clientKey, LIMITS, rateLimit } from "@/lib/rate-limit";
 import { hasEventAccess, readPass, writePass } from "@/lib/self-service";
 import { createPassToken } from "@/lib/tokens";
-import { clampString } from "@/lib/utils";
+import { readJson, selfCheckinSchema } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +21,12 @@ export async function POST(request: Request, ctx: { params: Promise<{ slug: stri
   if (!event.selfServiceEnabled) return fail("Die Anmeldung per Handy ist deaktiviert.", 403);
   if (!(await hasEventAccess(event))) return fail("Bitte den QR-Code am Eingang scannen.", 403);
 
-  const body = await request.json().catch(() => null);
-  const requestedId = clampString(body?.guestId, 64);
+  const parsed = await readJson(request, selfCheckinSchema);
+  if (!parsed.isValid) return fail(parsed.error);
+
+  const requestedId = parsed.data.guestId ?? "";
   // Der Kanal kommt aus der Seite, die den Aufruf ausgelöst hat.
-  const method = body?.channel === "nfc" ? ("nfc" as const) : ("self" as const);
+  const method = parsed.data.channel === "nfc" ? ("nfc" as const) : ("self" as const);
 
   // Wiedereintritt: das Telefon trägt den Ausweis, es ist keine Suche nötig.
   const pass = await readPass(event);

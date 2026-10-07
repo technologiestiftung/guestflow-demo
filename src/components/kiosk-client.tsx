@@ -30,12 +30,17 @@ type SearchResult = {
   name: string;
   organization: string | null;
   email: string | null;
-  alreadyCheckedIn: boolean;
+  hasCheckedIn: boolean;
 };
 
 /** Vom Server gereicht; bewusst nicht aus guest-lookup importiert — das Modul
  *  hängt an der Datenbank und gehört nicht ins Browser-Bundle. */
-export type SearchLabels = { label: string; placeholder: string; help: string };
+export type SearchLabels = {
+  label: string;
+  placeholder: string;
+  help: string;
+  isNumeric: boolean;
+};
 
 const RESET_AFTER_SUCCESS = 6000;
 const RESET_AFTER_ERROR = 9000;
@@ -557,7 +562,10 @@ function SearchPanel({
         autoComplete="off"
         autoCapitalize="none"
         spellCheck={false}
-        className="mt-8 h-16 px-4 text-xl"
+        // Im PIN-Modus die Zifferntastatur anfordern und die Eingabe begrenzen.
+        inputMode={labels.isNumeric ? "numeric" : "text"}
+        maxLength={labels.isNumeric ? 7 : undefined}
+        className={cn("mt-8 h-16 px-4 text-xl", labels.isNumeric && "tracking-[0.3em] tabular-nums")}
         aria-label={labels.label}
       />
 
@@ -578,7 +586,7 @@ function SearchPanel({
                   </span>
                 </span>
                 <span className="shrink-0 text-sm text-[var(--color-accent)]">
-                  {result.alreadyCheckedIn ? "Wiedereintritt" : "Das bin ich"}
+                  {result.hasCheckedIn ? "Wiedereintritt" : "Das bin ich"}
                 </span>
               </button>
             </li>

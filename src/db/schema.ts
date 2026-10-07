@@ -27,6 +27,17 @@ export const scanMethodEnum = pgEnum("scan_method", [
   "nfc", // Gast hält das Telefon an die NFC-Plakette
 ]);
 
+/**
+ * Wonach Gäste vor Ort gesucht werden dürfen, wenn der QR-Code nicht
+ * funktioniert. Die Stufen schließen sich gegenseitig aus und werden von
+ * links nach rechts strenger.
+ */
+export const lookupModeEnum = pgEnum("lookup_mode", [
+  "name", // Teiltreffer im Namen, dazu E-Mail und Ticketcode
+  "email", // nur vollständige E-Mail-Adresse oder Ticketcode
+  "pin", // nur die 6-stellige PIN des Gastes
+]);
+
 export const events = pgTable(
   "events",
   {
@@ -42,15 +53,14 @@ export const events = pgTable(
     /** Kiosk erlaubt Suche per Name/E-Mail, wenn der QR-Code nicht lesbar ist */
     manualSearch: boolean("manual_search").notNull().default(true),
     /**
-     * Suche nur über die vollständige E-Mail-Adresse oder den Ticketcode.
+     * Wonach gesucht werden darf.
      *
-     * Ohne diesen Schalter findet eine Namenssuche auch Teiltreffer — wer
-     * "Mül" eingibt, bekommt die Namen aller Müllers der Gästeliste zu sehen.
-     * Ist er gesetzt, muss die Eingabe exakt passen; aus der Liste lässt sich
-     * dann nichts mehr erraten, weil ein Treffer voraussetzt, dass man die
-     * Adresse ohnehin schon kennt.
+     * "name" findet auch Teiltreffer — wer "Mül" eingibt, bekommt die Namen
+     * aller Müllers der Gästeliste zu sehen. Bei "email" und "pin" muss die
+     * Eingabe exakt passen; aus der Liste lässt sich dann nichts mehr erraten,
+     * weil ein Treffer voraussetzt, dass man den Wert ohnehin schon kennt.
      */
-    emailOnlyLookup: boolean("email_only_lookup").notNull().default(false),
+    lookupMode: lookupModeEnum("lookup_mode").notNull().default("name"),
     /** Wiedereintritt ohne erneute Prüfung zulassen */
     allowReEntry: boolean("allow_re_entry").notNull().default(true),
     /**
@@ -85,6 +95,14 @@ export const guests = pgTable(
     /** Barrierefreiheit, Verdolmetschung, ... — löst Team-Hinweis aus */
     supportNeeds: text("support_needs"),
     ticketType: text("ticket_type"),
+    /**
+     * Sechsstellige PIN für den Suchmodus "pin".
+     *
+     * Kommt aus einer PIN-Spalte des Doo-Exports, sonst beim Import erzeugt.
+     * Einmal vergeben bleibt sie bestehen, damit bereits verschickte PINs
+     * durch einen zweiten Import nicht ungültig werden.
+     */
+    pin: text("pin"),
     notes: text("notes"),
     checkedInAt: timestamp("checked_in_at", { withTimezone: true }),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
@@ -98,6 +116,9 @@ export const guests = pgTable(
   },
   (t) => [
     uniqueIndex("guests_event_ticket_idx").on(t.eventId, t.ticketCode),
+    // Innerhalb einer Veranstaltung muss die PIN eindeutig sein, sonst wäre
+    // nicht entscheidbar, wer gemeint ist. Mehrere NULL-Werte sind erlaubt.
+    uniqueIndex("guests_event_pin_idx").on(t.eventId, t.pin),
     index("guests_event_name_idx").on(t.eventId, t.lastName),
     index("guests_event_email_idx").on(t.eventId, t.email),
   ],
@@ -139,3 +160,4 @@ export type Event = typeof events.$inferSelect;
 export type Guest = typeof guests.$inferSelect;
 export type Scan = typeof scans.$inferSelect;
 export type ScanResult = (typeof scanResultEnum.enumValues)[number];
+export type LookupMode = (typeof lookupModeEnum.enumValues)[number];

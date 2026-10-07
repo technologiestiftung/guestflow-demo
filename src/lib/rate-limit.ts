@@ -104,5 +104,21 @@ export const LIMITS = {
    * Begrenzung auf wenige Treffer je Suche.
    */
   selfFind: { limit: 300, windowMs: 60_000 } satisfies Rule,
+
+  /**
+   * Fehlversuche im PIN-Modus, gezaehlt je Veranstaltung.
+   *
+   * Sechs Ziffern sind rund eine Million Kombinationen. Bei 500 Gaesten trifft
+   * ein zufaelliger Versuch mit etwa 1:2000 irgendeinen Gast - ohne Bremse
+   * waere der Modus in wenigen Stunden durchprobiert. Mit diesen Werten dauert
+   * ein Treffer im Mittel laenger als jede Veranstaltung.
+   *
+   * Nur Fehlversuche zaehlen; eine richtige PIN kommt immer durch, damit sich
+   * Gaeste nicht durch fremde Rateversuche ausgesperrt finden.
+   */
+  pinAttempt: [
+    { limit: 12, windowMs: 60_000 },
+    { limit: 120, windowMs: 3_600_000 },
+  ] satisfies Rule[],
   selfCheckin: { limit: 300, windowMs: 60_000 } satisfies Rule,
 } as const;

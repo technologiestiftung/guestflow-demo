@@ -5,9 +5,9 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { randomBytes } from "node:crypto";
-import { events, guests } from "./schema";
-import * as schema from "./schema";
-import { requireDatabaseUrl } from "../lib/database-url";
+import { events, guests } from "@/db/schema";
+import * as schema from "@/db/schema";
+import { requireDatabaseUrl } from "@/lib/database-url";
 
 const connectionString = requireDatabaseUrl();
 

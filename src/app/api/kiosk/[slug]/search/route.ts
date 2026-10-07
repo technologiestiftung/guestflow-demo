@@ -1,5 +1,5 @@
-import { getEventBySlug } from "@/lib/checkin";
 import { fail, json } from "@/lib/api";
+import { getEventBySlug } from "@/lib/checkin";
 import { lookupGuests } from "@/lib/guest-lookup";
 import { clientKey, LIMITS, rateLimit } from "@/lib/rate-limit";
 import { clampString } from "@/lib/utils";
@@ -19,5 +19,13 @@ export async function GET(request: Request, ctx: { params: Promise<{ slug: strin
   if (!event.manualSearch) return fail("Suche ist für diese Veranstaltung deaktiviert.", 403);
 
   const query = clampString(new URL(request.url).searchParams.get("q"), 120);
-  return json(await lookupGuests(event, query, MAX_RESULTS));
+  const lookup = await lookupGuests(event, query, MAX_RESULTS);
+
+  // Rateversuche auf die PIN werden je Veranstaltung gedeckelt. Eine richtige
+  // PIN kommt immer durch, damit niemand sich durch fremde Versuche aussperrt.
+  if (lookup.isPinMiss && !rateLimit(`pin:${event.id}`, LIMITS.pinAttempt)) {
+    return fail("Zu viele Fehlversuche. Bitte am Empfang melden.", 429);
+  }
+
+  return json({ results: lookup.results, hint: lookup.hint });
 }

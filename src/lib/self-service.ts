@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import type { Event } from "@/db/schema";
-import { accessCookieOptions, eventKeyCookie, passCookie } from "./access-cookies";
-import { tokensMatch } from "./tokens";
+import { accessCookieOptions, eventKeyCookie, passCookie } from "@/lib/access-cookies";
+import { tokensMatch } from "@/lib/tokens";
 
-export { eventKeyCookie, passCookie } from "./access-cookies";
+export { eventKeyCookie, passCookie } from "@/lib/access-cookies";
 
 /**
  * Der Aushang-QR und die NFC-Plakette tragen den Zugangsschlüssel der

@@ -1,7 +1,7 @@
 import { getEventBySlug, performCheckin, displayName } from "@/lib/checkin";
 import { fail, json, maskEmail } from "@/lib/api";
 import { clientKey, LIMITS, rateLimit } from "@/lib/rate-limit";
-import { clampString } from "@/lib/utils";
+import { kioskCheckinSchema, readJson } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -15,14 +15,13 @@ export async function POST(request: Request, ctx: { params: Promise<{ slug: stri
   const event = await getEventBySlug(slug);
   if (!event || event.archivedAt) return fail("Veranstaltung nicht gefunden.", 404);
 
-  const body = await request.json().catch(() => null);
-  const code = clampString(body?.code, 400);
-  const guestId = clampString(body?.guestId, 64);
-  const method = body?.method === "manual" ? "manual" : "qr";
+  const parsed = await readJson(request, kioskCheckinSchema);
+  if (!parsed.isValid) return fail(parsed.error);
 
+  const { code, guestId, method } = parsed.data;
   if (!code && !guestId) return fail("Kein Code übergeben.");
 
-  const outcome = await performCheckin({ event, code: code || undefined, guestId: guestId || undefined, method });
+  const outcome = await performCheckin({ event, code, guestId, method });
 
   return json({
     result: outcome.result,

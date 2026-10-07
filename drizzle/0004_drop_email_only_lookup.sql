@@ -1,0 +1,1 @@
+ALTER TABLE "events" DROP COLUMN "email_only_lookup";
